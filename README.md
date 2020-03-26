@@ -3,11 +3,11 @@
 ## THIS IS CURRENTLY NON-FUNCTIONAL
 
 ## TO DO
-- [ ] Convert to OSGI Plugin, Build and Activate Plugin
-- [ ] Load Portlet correctly
-- [ ] Convert Filters to Interceptors
-- [ ] Insure configs and properties are loading correctly (need to use url based loading)
-- [ ] ???
+* ~Convert to OSGI Plugin, Build and Activate Plugin~
+* ~Load Portlet correctly~
+* Convert Filters to Interceptors
+* Insure configs and properties are loading correctly (need to use url based loading)
+* ???
 
 
 
