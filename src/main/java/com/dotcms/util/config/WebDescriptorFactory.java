@@ -1,10 +1,9 @@
 package com.dotcms.util.config;
 
-import com.dotcms.plugin.saml.v3.filter.SamlAccessFilter;
-
 import java.io.File;
 import java.io.InputStream;
 import java.io.StringWriter;
+import com.dotcms.saml.filter.SamlAccessFilter;
 
 /**
  * Factory for a {@link WebDescriptor}

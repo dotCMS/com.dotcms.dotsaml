@@ -28,6 +28,33 @@ dependencies {
     compile  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
 
+
+
+
+    pluginLibs  'org.opensaml:opensaml-core:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-saml-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-security-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-xmlsec-impl:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-xmlsec-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-security-impl:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-messaging-impl:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-messaging-api:3.4.5'
+
+    pluginLibs  'org.opensaml:opensaml-storage-impl:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-storage-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-xacml-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
+    pluginLibs  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
+
+    pluginLibs group: 'org.slf4j', name:'slf4j-api', version:'1.7.7'
+    pluginLibs group: 'org.slf4j', name:'slf4j-simple', version: '1.7.7'
+    pluginLibs group: 'org.slf4j', name:'jcl-over-slf4j', version:'1.7.1'
+
+
+
+
+
+
 }
 
 import java.util.jar.*
@@ -41,11 +68,18 @@ jar {
                 'Bundle-Vendor': 'dotCMS',
                 'Bundle-Description': 'dotCMS - SAML Support ',
                 'Bundle-DocURL': 'https://dotcms.com/',
-                'Bundle-Activator': 'com.dotcms.license.osgi.Activator',
+                'Bundle-Activator': 'com.dotcms.saml.osgi.Activator',
                 'Import-Package': '*;version=0'
         )
     }
 }
+
+task copyToLib(type: Copy) {
+    into "src/main/resources/libs"
+    from configurations.pluginLibs
+}
+
+jar.dependsOn copyToLib
 jar.finalizedBy 'fragmentJar'
 
 /////////////////////////

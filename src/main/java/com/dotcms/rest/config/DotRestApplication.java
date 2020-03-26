@@ -1,8 +1,6 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
-import com.dotcms.plugin.saml.v3.rest.DotSamlRestService;
-import com.dotcms.plugin.saml.v3.rest.api.v1.DotSamlResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
 import com.dotcms.rest.api.v1.temp.TempFileResource;
@@ -51,7 +49,8 @@ import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
-
+import com.dotcms.saml.rest.DotSamlRestService;
+import com.dotcms.saml.rest.api.v1.DotSamlResource;
 import java.util.HashSet;
 import java.util.Set;
 

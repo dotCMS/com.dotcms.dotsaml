@@ -1,6 +1,6 @@
 <%@ page import="com.dotmarketing.business.CacheLocator" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
-<%@ page import="com.dotcms.plugin.saml.v3.cache.SamlCache" %>
+<%@ page import="com.dotcms.saml.cache.SamlCache" %>
 
 <%@ include file="/html/common/init.jsp"%>
 <%request.setAttribute("requiredPortletAccess", "maintenance"); %>
