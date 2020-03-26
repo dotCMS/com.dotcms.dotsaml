@@ -1,5 +1,7 @@
 
-# plugin-dotcms-openSAML3
+# THIS IS CURRENTLY NON-FUNCTIONAL
+
+OSGI implementaion of the SAML plugin
 
 This plugin allows to modify the authentication process in DOTCMS
 using the Open SAML 3 (Security Assertion Markup Language) protocols for
