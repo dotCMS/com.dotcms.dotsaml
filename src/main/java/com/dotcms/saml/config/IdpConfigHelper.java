@@ -1,13 +1,5 @@
 package com.dotcms.saml.config;
 
-import com.dotcms.saml.cache.SamlCache;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -15,6 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import com.dotcms.saml.cache.SamlCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 
 public class IdpConfigHelper extends IdpConfigFileHelper implements Serializable
 {
@@ -30,7 +27,7 @@ public class IdpConfigHelper extends IdpConfigFileHelper implements Serializable
 		return IdpConfigHelper.SingletonHolder.INSTANCE;
 	}
 
-	private SamlCache samlCache = CacheLocator.getSamlCache();
+	private SamlCache samlCache = SamlCache.INSTANCE.get();
 
 	public IdpConfigHelper()
 	{

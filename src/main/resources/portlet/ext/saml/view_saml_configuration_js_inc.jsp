@@ -1,6 +1,6 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%response.setContentType("text/JavaScript");%>
+
 
 	require(["dojo/ready"], function(ready){
 		ready(function(){

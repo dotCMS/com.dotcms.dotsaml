@@ -19,101 +19,87 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Default initializer Responsibilities: - Init the Java Crypto. - Init Saml
- * Services. - Init Plugin Configuration and meta data.
+ * Default initializer Responsibilities: - Init the Java Crypto. - Init Saml Services. - Init Plugin
+ * Configuration and meta data.
  *
  * @author jsanca
  */
-public class SamlInitializer implements Initializer
-{
+public class SamlInitializer implements Initializer {
 
-	private static final long serialVersionUID = -5869927082029401479L;
+    private static final long serialVersionUID = -5869927082029401479L;
 
-	private final AtomicBoolean initDone = new AtomicBoolean( false );
+    private final AtomicBoolean initDone = new AtomicBoolean(false);
 
-	public SamlInitializer()
-	{
+    public SamlInitializer() {
 
-	}
+    }
 
-	@Override
-	public void init( final Map<String, Object> context )
-	{
+    @Override
+    public void init(final Map<String, Object> context) {
 
-		// Prepare the default properties.
-		DotsamlDefaultPropertiesService.init();
+        // Prepare the default properties.
+        DotsamlDefaultPropertiesService.init();
 
-		JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
+        JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
 
-		try
-		{
-			javaCryptoValidationInitializer.init();
-		}
-		catch ( InitializationException initializationException )
-		{
-			initializationException.printStackTrace();
-		}
+        try {
+            javaCryptoValidationInitializer.init();
+        } catch (InitializationException initializationException) {
+            initializationException.printStackTrace();
+        }
 
-		for ( Provider jceProvider : Security.getProviders() )
-		{
-			Logger.info( this, jceProvider.getInfo() );
-		}
+        for (Provider jceProvider : Security.getProviders()) {
+            Logger.info(this, jceProvider.getInfo());
+        }
 
-		try
-		{
-			// Force a cache/file system read to initialize cache.
-			IdpConfigHelper.getInstance().getIdpConfigs();
-		}
-		catch ( JSONException | IOException exception )
-		{
-			Logger.error( this, "Could not initialize IdpConfigs.", exception );
-		}
+        try {
+            // Force a cache/file system read to initialize cache.
+            IdpConfigHelper.getInstance().getIdpConfigs();
+        } catch (JSONException | IOException exception) {
+            Logger.error(this, "Could not initialize IdpConfigs.", exception);
+        }
 
-		try
-		{
-			Logger.info( this, "Initializing..." );
-			InitializationService.initialize();
-			
-			if (XMLObjectProviderRegistrySupport.getParserPool() == null ) {
-				XMLObjectProviderRegistrySupport.setParserPool(new BasicParserPool());
-			}
-		}
-		catch ( InitializationException e )
-		{
-			throw new RuntimeException( "Initialization failed", e );
-		}
+        try {
+            Logger.info(this, "Initializing...");
+            InitializationService.initialize();
 
-		// Tuckey rewrite to route /dotsaml/login/* to /api/dotsaml/login/*
-		// and /dotsaml/metadata/* to /api/dotsaml/metadata/*
-		addDotsamlRestServiceRedirect();
-
-		this.initDone.set( true );
-	}
-
-	private void addDotsamlRestServiceRedirect() {
-		NormalRule rule = new NormalRule();
-		rule.setFrom("^\\/dotsaml\\/("+String.join("|", DotSamlRestService.dotsamlPathSegments)+")\\/(.+)$");
-		rule.setToType("forward");
-		rule.setTo("/api/dotsaml/$1/$2");
-		rule.setName("Dotsaml REST Service Redirect");
-		DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
-		try {
-			if(urlRewriteFilter != null) {
-                urlRewriteFilter.addRule(rule);
-            }else {
-				throw new Exception();
+            if (XMLObjectProviderRegistrySupport.getParserPool() == null) {
+                XMLObjectProviderRegistrySupport.setParserPool(new BasicParserPool());
             }
-		} catch (Exception e) {
-			Logger.error(this, "Could not add the Dotsaml REST Service Redirect Rule. Requests to " +
-					"/dotsaml/login/{UUID} will fail!");
-		}
-	}
+        } catch (InitializationException e) {
+            throw new RuntimeException("Initialization failed", e);
+        }
 
-	@Override
-	public boolean isInitializationDone()
-	{
+        // Tuckey rewrite to route /dotsaml/login/* to /api/dotsaml/login/*
+        // and /dotsaml/metadata/* to /api/dotsaml/metadata/*
+        addDotsamlRestServiceRedirect();
 
-		return this.initDone.get();
-	}
+        this.initDone.set(true);
+    }
+
+    private void addDotsamlRestServiceRedirect() {
+        NormalRule rule = new NormalRule();
+        rule.setFrom("^\\/dotsaml\\/(" + String.join("|", DotSamlRestService.dotsamlPathSegments) + ")\\/(.+)$");
+        rule.setToType("forward");
+        rule.setTo("/api/dotsaml/$1/$2");
+        rule.setName("Dotsaml REST Service Redirect");
+        DotUrlRewriteFilter urlRewriteFilter = DotUrlRewriteFilter.getUrlRewriteFilter();
+        try {
+            if (urlRewriteFilter != null) {
+                urlRewriteFilter.addRule(rule);
+            } else {
+                throw new Exception();
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Could not add the Dotsaml REST Service Redirect Rule. Requests to "
+                            + "/dotsaml/login/{UUID} will fail!");
+        }
+    }
+
+    @Override
+    public boolean isInitializationDone() {
+
+        return this.initDone.get();
+    }
 
 }

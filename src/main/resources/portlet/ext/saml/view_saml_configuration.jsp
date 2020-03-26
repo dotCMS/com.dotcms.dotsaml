@@ -3,8 +3,10 @@
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.List"%>
 
-<script type="text/javascript" src="/html/portlet/ext/saml/view_saml_configuration_js_inc.jsp" ></script>
+<script>
+<jsp:include page="./view_saml_configuration_js_inc.jsp" />
 
+</script>
 <div class="portlet-main">
 	<!-- START Toolbar -->
 	<div class="portlet-toolbar">

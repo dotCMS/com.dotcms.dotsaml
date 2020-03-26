@@ -8,7 +8,9 @@ version = '5.2.7'
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
 }
-
+configurations {
+    pluginLibs
+}
 dependencies {
     compile ('com.dotcms:dotcms:5.2.6') { transitive = true }
 
@@ -22,7 +24,7 @@ dependencies {
     compile  'org.opensaml:opensaml-messaging-impl:3.4.5'
     compile  'org.opensaml:opensaml-messaging-api:3.4.5'
 
-    compile  'org.opensaml:opensaml-storage-impl:3.4.5'
+    compile  ('org.opensaml:opensaml-storage-impl:3.4.5'){ transitive = false }
     compile  'org.opensaml:opensaml-storage-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
@@ -40,20 +42,16 @@ dependencies {
     pluginLibs  'org.opensaml:opensaml-messaging-impl:3.4.5'
     pluginLibs  'org.opensaml:opensaml-messaging-api:3.4.5'
 
-    pluginLibs  'org.opensaml:opensaml-storage-impl:3.4.5'
+    pluginLibs  ('org.opensaml:opensaml-storage-impl:3.4.5'){ transitive = false }
+    
     pluginLibs  'org.opensaml:opensaml-storage-api:3.4.5'
     pluginLibs  'org.opensaml:opensaml-xacml-api:3.4.5'
     pluginLibs  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
     pluginLibs  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
 
-    pluginLibs group: 'org.slf4j', name:'slf4j-api', version:'1.7.7'
-    pluginLibs group: 'org.slf4j', name:'slf4j-simple', version: '1.7.7'
-    pluginLibs group: 'org.slf4j', name:'jcl-over-slf4j', version:'1.7.1'
-
-
-
-
-
+   // pluginLibs group: 'org.slf4j', name:'slf4j-api', version:'1.7.7'
+    //pluginLibs group: 'org.slf4j', name:'slf4j-simple', version: '1.7.7'
+   // pluginLibs group: 'org.slf4j', name:'jcl-over-slf4j', version:'1.7.1'
 
 }
 

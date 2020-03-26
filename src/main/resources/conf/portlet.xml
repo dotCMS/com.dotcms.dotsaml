@@ -1,3 +1,5 @@
+<?xml version="1.0"?>
+<portlet-app>
 <portlet>
 	<portlet-name>saml-configuration</portlet-name>
 	<display-name>SAML Configuration</display-name>
@@ -10,3 +12,4 @@
 		<role-name>CMS Administrator</role-name>
 	</security-role-ref>
 </portlet>
+</portlet-app>

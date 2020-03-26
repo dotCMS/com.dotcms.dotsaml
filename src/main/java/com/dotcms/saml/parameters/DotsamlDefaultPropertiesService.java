@@ -1,8 +1,6 @@
 package com.dotcms.saml.parameters;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import com.dotcms.saml.exception.DotSamlException;
@@ -28,34 +26,19 @@ public class DotsamlDefaultPropertiesService {
 		updateDefaultParameters(loadOptionalDefaults());
 	}
 
-	private static Properties loadOptionalDefaults() {
-		Properties props = new Properties();
-		InputStream input = null;
+    private static Properties loadOptionalDefaults() {
+        Properties props = new Properties();
 
-		try {
 
-			input = new FileInputStream(idpFilePath);
-			props.load(input);
-
-		} catch (IOException ex) {
-			// Since this is optional, it is valid to not have the file.
-			// Log and go on.
-			Logger.warn(DotsamlDefaultPropertiesService.class, UNABLE_TO_READ_FILE + idpFilePath);
-
-		} finally {
-			if (input != null) {
-
-				try {
-					input.close();
-				} catch (IOException e) {
-					Logger.error(DotsamlDefaultPropertiesService.class, UNABLE_TO_CLOSE_FILE + idpFilePath);
-					e.printStackTrace();
-				}
-			}
-		}
-
-		return props;
-	}
+        try (InputStream input = DotsamlDefaultPropertiesService.class.getResourceAsStream(idpFilePath)) {
+            props.load(input);
+        } catch (Exception ex) {
+            // Since this is optional, it is valid to not have the file.
+            // Log and go on.
+            Logger.warn(DotsamlDefaultPropertiesService.class, UNABLE_TO_READ_FILE + idpFilePath);
+        }
+        return props;
+    }
 
 	public static DotsamlProperties getDefaultParams() {
 		return defaultParams;
