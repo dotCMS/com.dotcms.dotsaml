@@ -3,8 +3,9 @@
 ## THIS IS CURRENTLY NON-FUNCTIONAL
 
 ## TO DO
-* ~Convert to OSGI Plugin, Build and Activate Plugin~
-* ~Load Portlet correctly~
+* ~Convert to OSGI Plugin, fix red~
+* ~Upgraded to latest version of OpenSAML~
+* ~Plugin Activates and loads portlet correctly~
 * Convert Filters to Interceptors
 * Insure configs and properties are loading correctly (need to use url based loading)
 * ???
