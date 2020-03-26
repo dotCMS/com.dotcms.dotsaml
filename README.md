@@ -1,5 +1,5 @@
 
-# OSGI implementaion of the SAML plugin 
+## OSGI implementaion of the SAML plugin 
 ## THIS IS CURRENTLY NON-FUNCTIONAL
 
 ## TO DO
