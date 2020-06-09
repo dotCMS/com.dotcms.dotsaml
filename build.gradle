@@ -3,18 +3,17 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '5.2.7'
+version = '5.3.3'
 
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
 }
 configurations {
-    pluginLibs
+    osgiLibs
 }
 dependencies {
-    compile ('com.dotcms:dotcms:5.2.6') { transitive = true }
 
-
+    compile('com.dotcms:dotcms:5.3.1') { transitive = true }
     compile  'org.opensaml:opensaml-core:3.4.5'
     compile  'org.opensaml:opensaml-saml-api:3.4.5'
     compile  'org.opensaml:opensaml-security-api:3.4.5'
@@ -29,34 +28,10 @@ dependencies {
     compile  'org.opensaml:opensaml-xacml-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
-
-
-
-
-    pluginLibs  'org.opensaml:opensaml-core:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-saml-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-security-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-xmlsec-impl:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-xmlsec-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-security-impl:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-messaging-impl:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-messaging-api:3.4.5'
-
-    pluginLibs  ('org.opensaml:opensaml-storage-impl:3.4.5'){ transitive = false }
-    
-    pluginLibs  'org.opensaml:opensaml-storage-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-xacml-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
-    pluginLibs  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
-
-   // pluginLibs group: 'org.slf4j', name:'slf4j-api', version:'1.7.7'
-    //pluginLibs group: 'org.slf4j', name:'slf4j-simple', version: '1.7.7'
-   // pluginLibs group: 'org.slf4j', name:'jcl-over-slf4j', version:'1.7.1'
-
 }
 
-import java.util.jar.*
 
+jar.baseName = 'com.dotcms.saml'
 /////////////////////////
 //Plugin jar
 /////////////////////////
@@ -64,87 +39,24 @@ jar {
     manifest {
         attributes (
                 'Bundle-Vendor': 'dotCMS',
-                'Bundle-Description': 'dotCMS - SAML Support ',
+                'Bundle-Description': 'dotCMS - SAML Provider',
                 'Bundle-DocURL': 'https://dotcms.com/',
                 'Bundle-Activator': 'com.dotcms.saml.osgi.Activator',
-                'Import-Package': '*;version=0'
+                'DynamicImport-Package': '*',
+                'Import-Package': '''
+                    javax.servlet.http;version=0,
+                    javax.servlet;version=0,
+                    com.dotmarketing.filters;version=0,
+                    com.dotmarketing.osgi;version=0,
+                    com.dotmarketing.util;version=0,
+                    com.dotmarketing.exception;version=0,
+                    org.apache.felix.http.api;version=0,
+                    org.osgi.framework;version=0,
+                    org.osgi.service.http;version=0
+                '''
         )
     }
 }
-
-task copyToLib(type: Copy) {
-    into "src/main/resources/libs"
-    from configurations.pluginLibs
-}
-
-jar.dependsOn copyToLib
-jar.finalizedBy 'fragmentJar'
-
-/////////////////////////
-//Fragment jar
-/////////////////////////
-
-ext {
-    bundleName = "SAML fragment"
-    bundleDescription = "dotCMS - SAML fragment"
-    fragmentHost = "system.bundle; extension:=framework"
-    bundleSymbolicName = "" //Auto generated based on the plugin jar
-    bundleVersion = "" //Auto generated based on the plugin jar
-    importPackage = "" //Auto generated based on the plugin jar
-    bundleManifestVersion = "" //Auto generated based on the plugin jar
-    bundleDocURL = "" //Auto generated based on the plugin jar
-    bundleVendor = "" //Auto generated based on the plugin jar
-}
-/**
- * The import generates versions like this: version="[1.8,2)"
- * That format does not work for the export, so we need to replace it
- * to: version=0
- */
-ext.fixVersionNumber = {importValue ->
-    return importValue.replaceAll("\"\\[[0-9.,]+\\)\"", "0")
-}
-
-/**
- * Reads the Manifest file of the just created plugin jar in order to get the required info
- * to automatically create the fragment jar.
- */
-task readManifesttAttributes {
-    doFirst {
-        File file = configurations.baseline.singleFile
-        JarFile jar = new JarFile(file)
-        Attributes manifest = jar.getManifest().getMainAttributes()
-        bundleSymbolicName = "${manifest.getValue('Bundle-SymbolicName')}"
-        bundleVersion = "${manifest.getValue('Bundle-Version')}"
-        importPackage = "${manifest.getValue('Import-Package')}"
-        bundleManifestVersion = "${manifest.getValue('Bundle-ManifestVersion')}"
-        bundleDocURL = "${manifest.getValue('Bundle-DocURL')}"
-        bundleVendor = "${manifest.getValue('Bundle-Vendor')}"
-    }
-}
-task fragmentJar(type: Jar) {
-
-    doFirst {
-        //Setting the fragment jar name
-        baseName = project.name
-        archiveName = "${baseName}.fragment-${version}.jar"
-        importPackage = fixVersionNumber(importPackage)
-
-        manifest {
-            attributes (
-                    'Bundle-Name': "${bundleName}",
-                    'Bundle-Description': "${bundleDescription}",
-                    'Bundle-Vendor': "${bundleVendor}",
-                    'Bundle-Version': "${version}",
-                    'Bundle-SymbolicName': "${baseName}.fragment",
-                    'Bundle-ManifestVersion': "${bundleManifestVersion}",
-                    'Bundle-DocURL': "${bundleDocURL}",
-                    'Fragment-Host': "${fragmentHost}",
-                    'Export-Package': "${importPackage}"
-            )
-        }
-    }
-}
-fragmentJar.dependsOn 'readManifesttAttributes'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '4.2'
