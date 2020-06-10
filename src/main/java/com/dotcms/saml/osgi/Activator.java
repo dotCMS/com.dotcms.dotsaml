@@ -1,31 +1,33 @@
 package com.dotcms.saml.osgi;
 
-import com.dotcms.tika.TikaServiceBuilder;
-import com.dotmarketing.osgi.GenericBundleActivator;
-import java.util.Hashtable;
+import com.dotcms.saml.service.impl.SamlServiceBuilderImpl;
+import com.dotcms.saml.service.external.SamlServiceBuilder;
+import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
-public class Activator extends GenericBundleActivator {
+import java.util.Hashtable;
 
-    private ServiceRegistration dotTikaService;
+public class Activator implements BundleActivator {
+
+    private ServiceRegistration samlServiceBuilder;
 
     @SuppressWarnings("unchecked")
-    public void start(BundleContext context) throws Exception {
+    public void start(final BundleContext context) throws Exception {
 
-        //Create an instance of our TikaBuilder
-        TikaBuilderImpl tikaBuilder = new TikaBuilderImpl();
+        //Create an instance of our SamlServiceBuilderImpl
+        final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
 
         //Register the TikaServiceBuilder as a OSGI service
-        this.dotTikaService = context
-                .registerService(TikaServiceBuilder.class.getName(), tikaBuilder,
+        this.samlServiceBuilder = context
+                .registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
                         new Hashtable<>());
     }
 
-    public void stop(BundleContext context) throws Exception {
+    public void stop(final BundleContext context) throws Exception {
 
         //Unregister the registered services
-        this.dotTikaService.unregister();
+        this.samlServiceBuilder.unregister();
     }
 
 }

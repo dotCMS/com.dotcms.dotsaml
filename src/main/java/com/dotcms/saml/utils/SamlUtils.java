@@ -1,7 +1,7 @@
 package com.dotcms.saml.utils;
 
-import com.dotcms.saml.service.SamlException;
-import com.dotcms.saml.service.impl.SamlServiceImpl;
+import com.dotcms.saml.service.external.SamlException;
+import com.dotcms.saml.service.impl.SamlCoreServiceImpl;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 import org.opensaml.core.xml.XMLObject;
@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class SamlUtils {
 
-    private static final MarshallerFactory marshallerFactory                        = XMLObjectProviderRegistrySupport.getMarshallerFactory();
+    private static final MarshallerFactory                  marshallerFactory       = XMLObjectProviderRegistrySupport.getMarshallerFactory();
     private static final RandomIdentifierGenerationStrategy secureRandomIdGenerator = new RandomIdentifierGenerationStrategy();
 
     /**
@@ -85,7 +85,7 @@ public class SamlUtils {
             xmlString = result.getWriter().toString();
         } catch (TransformerException e) {
 
-            Logger.getLogger(SamlServiceImpl.class.getName()).log(Level.WARNING, e.getMessage(), e);
+            Logger.getLogger(SamlCoreServiceImpl.class.getName()).log(Level.WARNING, e.getMessage(), e);
         }
 
         return xmlString;
@@ -100,7 +100,7 @@ public class SamlUtils {
             out.marshall(object);
         } catch (MarshallingException e) {
 
-            Logger.getLogger(SamlServiceImpl.class.getName()).log(Level.WARNING, e.getMessage(), e);
+            Logger.getLogger(SamlCoreServiceImpl.class.getName()).log(Level.WARNING, e.getMessage(), e);
         }
 
         return object.getDOM();
@@ -119,6 +119,7 @@ public class SamlUtils {
     public static <T> void invokeMessageHandlerChain(final BasicMessageHandlerChain<T> handlerChain,
                                                      final MessageContext<T> context) {
         try {
+
             handlerChain.initialize();
             handlerChain.doInvoke(context);
         } catch (ComponentInitializationException | MessageHandlerException e) {

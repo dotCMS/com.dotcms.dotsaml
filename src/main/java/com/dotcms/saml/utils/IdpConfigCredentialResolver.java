@@ -1,9 +1,8 @@
 package com.dotcms.saml.utils;
 
-import com.dotcms.plugin.saml.v3.config.IdpConfig;
-import com.dotcms.plugin.saml.v3.config.IdpConfigHelper;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.json.JSONException;
+import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
+import com.dotcms.saml.service.external.MessageObserver;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
 import org.apache.commons.io.FileUtils;
@@ -13,15 +12,12 @@ import org.opensaml.security.credential.UsageType;
 import org.opensaml.security.credential.impl.AbstractCriteriaFilteringCredentialResolver;
 import org.opensaml.security.x509.BasicX509Credential;
 import org.opensaml.xml.util.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -47,38 +43,30 @@ import java.util.Collections;
  */
 public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCredentialResolver {
 
-	/** Class logger. */
-	private final Logger log = LoggerFactory.getLogger(IdpConfigCredentialResolver.class);
+	private final IdentityProviderConfigurationFactory identityProviderConfigurationFactory;
+	private final MessageObserver messageObserver;
 
-	private final IdpConfigHelper helper;
-
-	/**
-	 * Constructor.
-	 * 
-	 * @param configId
-	 *            The IdpConfig ID to retrieve.
-	 */
-	public IdpConfigCredentialResolver() {
-		super();
-		helper = IdpConfigHelper.getInstance();
+	public IdpConfigCredentialResolver(final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
+									   final MessageObserver messageObserver) {
+		this.identityProviderConfigurationFactory = identityProviderConfigurationFactory;
+		this.messageObserver = messageObserver;
 	}
 
 	/** {@inheritDoc} */
-	@Nonnull
-	protected Iterable<Credential> resolveFromSource(@Nullable final CriteriaSet criteriaSet) throws ResolverException {
+	protected Iterable<Credential> resolveFromSource(final CriteriaSet criteriaSet) throws ResolverException {
 
-		checkCriteriaRequirements(criteriaSet);
-		String entityID = criteriaSet.get(EntityIdCriterion.class).getEntityId();
-		IdpConfig idpConfig = getIdpConfig(entityID);
+		this.checkCriteriaRequirements(criteriaSet);
+		final String entityID = criteriaSet.get(EntityIdCriterion.class).getEntityId();
+		final IdentityProviderConfiguration identityProviderConfiguration = getIdpConfig(entityID);
 
-		X509Certificate cert = getPublicCert(idpConfig.getPublicCert());
-		PrivateKey privateKey = getPriavteKey(idpConfig.getPrivateKey());
+		final X509Certificate cert  = getPublicCert(identityProviderConfiguration.getPublicCert());
+		final PrivateKey privateKey = getPrivateKey(identityProviderConfiguration.getPrivateKey());
 
-		BasicX509Credential credential = new BasicX509Credential(cert, privateKey);
-		credential.setEntityId(idpConfig.getId());
+		final BasicX509Credential credential = new BasicX509Credential(cert, privateKey);
+		credential.setEntityId(identityProviderConfiguration.getId());
 		credential.setUsageType(UsageType.UNSPECIFIED);
 
-		ArrayList<X509Certificate> certChain = new ArrayList<>();
+		final ArrayList<X509Certificate> certChain = new ArrayList<>();
 		certChain.add(cert);
 		credential.setEntityCertificateChain(certChain);
 
@@ -91,46 +79,37 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 	 * @param criteriaSet
 	 *            the credential criteria set to evaluate
 	 */
-	protected void checkCriteriaRequirements(@Nullable final CriteriaSet criteriaSet) {
+	protected void checkCriteriaRequirements(final CriteriaSet criteriaSet) {
 
 		if (criteriaSet == null || criteriaSet.get(EntityIdCriterion.class) == null) {
 
-			log.error("EntityIDCriterion was not specified in the criteria set, resolution cannot be attempted");
+			this.messageObserver.updateError(this.getClass(),
+					"EntityIDCriterion was not specified in the criteria set, resolution cannot be attempted");
 			throw new IllegalArgumentException("No EntityIDCriterion was available in criteria set");
 		}
 	}
 
-	protected IdpConfig getIdpConfig(final String id) throws ResolverException {
+	protected IdentityProviderConfiguration getIdpConfig(final String id) throws ResolverException {
 
-		IdpConfig idpConfig = null;
+		IdentityProviderConfiguration identityProviderConfiguration = null;
 
 		try {
 
-			idpConfig = helper.findIdpConfig(id);
+			identityProviderConfiguration = identityProviderConfigurationFactory.findIdentityProviderConfigurationById(id);
+		} catch (final Exception e) {
 
-		} catch (final IOException e) {
-
-			log.error("Unable to read IdpConfig data for ID: {}", id);
-			throw new ResolverException("Unable to read IdpConfig data for ID", e);
-
-		} catch (final JSONException e) {
-
-			log.error("JSON Exception while reading IdpConfig data for ID: {}", id);
-			throw new ResolverException("JSON Exception while reading IdpConfig data", e);
-
-		} catch (final DotDataException e) {
-
-			log.error("DotData Exception while reading IdpConfig data for ID: {}", id);
-			throw new ResolverException("DotData Exception while reading IdpConfig data", e);
+			this.messageObserver.updateError(this.getClass(), "Exception while reading IdpConfig data for ID: {}", id);
+			throw new ResolverException("Exception while reading IdpConfig data", e);
 
 		}
 
-		if (idpConfig == null) {
-			log.error("Unable to located IdpConfig file with ID: {}", id);
+		if (identityProviderConfiguration == null) {
+
+			this.messageObserver.updateError(this.getClass(), "Unable to located IdpConfig file with ID: {}", id);
 			throw new ResolverException("Unable to located IdpConfig file with ID:");
 		}
 
-		return idpConfig;
+		return identityProviderConfiguration;
 	}
 
 	protected X509Certificate getPublicCert(final File certFile) throws ResolverException {
@@ -138,79 +117,82 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		X509Certificate cert = null;
 
 		if (certFile == null) {
-			log.error("Public Key file cannot be null!");
+			this.messageObserver.updateError(this.getClass(), "Public Key file cannot be null!");
 			throw new ResolverException("Public Key file cannot be null!");
 		}
 
 		if (!certFile.exists()) {
-			log.error("Public Key file must Exist!");
+			this.messageObserver.updateError(this.getClass(), "Public Key file must Exist!");
 			throw new ResolverException("Public Key file must Exist!");
 		}
 
-		try {
-			CertificateFactory cf = CertificateFactory.getInstance("X.509");
-			cert = (X509Certificate) cf.generateCertificate(new FileInputStream(certFile));
+		try (InputStream inputStream = Files.newInputStream(certFile.toPath())) {
 
+			final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+			cert = (X509Certificate) certificateFactory.generateCertificate(inputStream);
 		} catch (IOException e) {
-			log.error("Unable to read Public Key File");
-			throw new ResolverException("Unable to read Public Key File", e);
 
+			this.messageObserver.updateError(this.getClass(), "Unable to read Public Key File");
+			throw new ResolverException("Unable to read Public Key File", e);
 		} catch (CertificateException e) {
-			log.error("Certificate Error reading Public Key File");
+
+			this.messageObserver.updateError(this.getClass(), "Certificate Error reading Public Key File");
 			throw new ResolverException("Certificate Error reading Public Key File", e);
 
 		}
 
 		if (cert == null) {
-			log.error("Public certificate cannot be null!");
+
+			this.messageObserver.updateError(this.getClass(), "Public certificate cannot be null!");
 			throw new ResolverException("Public certificate cannot be null!");
 		}
 
 		return cert;
 	}
 
-	protected PrivateKey getPriavteKey(final File keyFile) throws ResolverException {
+	protected PrivateKey getPrivateKey(final File keyFile) throws ResolverException {
 
-		PrivateKey privKey = null;
+		PrivateKey privateKey = null;
 
 		if (keyFile == null) {
-			log.error("Private Key file cannot be null!");
+
+			this.messageObserver.updateError(this.getClass(),"Private Key file cannot be null!");
 			throw new ResolverException("Private Key file cannot be null!");
 		}
 
 		if (!keyFile.exists()) {
-			log.error("Private Key file must Exist!");
+
+			this.messageObserver.updateError(this.getClass(),"Private Key file must Exist!");
 			throw new ResolverException("Private Key file must Exist!");
 		}
 
 		try {
-			// TODO This locks in the private key type to RSA. We will need to
-			// review.
-			String stringPrivateKey = FileUtils.readFileToString(keyFile, Charset.forName("utf-8"));
+			// TODO This locks in the private key type to RSA. We will need to review.
+			String stringPrivateKey = FileUtils.readFileToString(keyFile, StandardCharsets.UTF_8);
 			stringPrivateKey = stringPrivateKey.replace("-----BEGIN PRIVATE KEY-----\n", "");
 			stringPrivateKey = stringPrivateKey.replace("-----END PRIVATE KEY-----", "");
 
-			KeyFactory kf = KeyFactory.getInstance("RSA");
-
-			PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(
-					Base64.decode(stringPrivateKey));
-			privKey = kf.generatePrivate(keySpecPKCS8);
-
+			final KeyFactory keyFactory            = KeyFactory.getInstance("RSA");
+			final PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(Base64.decode(stringPrivateKey));
+			privateKey = keyFactory.generatePrivate(keySpecPKCS8);
 		} catch (IOException e) {
-			log.error("Unable to read Private Key File");
+
+			this.messageObserver.updateError(this.getClass(),"Unable to read Private Key File");
 			throw new ResolverException("Unable to read Private Key File", e);
 
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-			log.error("Unable to translate Private Key");
+
+			this.messageObserver.updateError(this.getClass(),"Unable to translate Private Key");
 			throw new ResolverException("Unable to translate Private Key", e);
 		}
 
-		if (privKey == null) {
-			log.error("Private certificate cannot be null!");
+		if (privateKey == null) {
+
+			this.messageObserver.updateError(this.getClass(),"Private certificate cannot be null!");
 			throw new ResolverException("Private certificate cannot be null!");
 		}
 
-		return privKey;
+		return privateKey;
 	}
 
 }

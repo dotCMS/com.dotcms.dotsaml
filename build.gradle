@@ -13,7 +13,14 @@ configurations {
 }
 dependencies {
 
-    compile('com.dotcms:dotcms:5.3.1') { transitive = true }
+    //compile('com.dotcms:dotcms:5.3.1') { transitive = true }
+    compile(group: 'org.apache.felix', name: 'org.apache.felix.main', version: '5.6.10') {
+        exclude(group: 'commons-logging')
+        exclude(group: 'org.slf4j')
+    }
+    //providedCompile "javax.servlet:javax.servlet-api:3.1.0"
+    compile "javax.servlet:javax.servlet-api:3.1.0"
+
     compile  'org.opensaml:opensaml-core:3.4.5'
     compile  'org.opensaml:opensaml-saml-api:3.4.5'
     compile  'org.opensaml:opensaml-security-api:3.4.5'

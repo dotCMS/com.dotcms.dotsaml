@@ -1,12 +1,12 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.CredentialProvider;
-import com.dotcms.saml.service.CredentialService;
-import com.dotcms.saml.service.IdentityProviderConfiguration;
-import com.dotcms.saml.service.SamlConfigurationService;
-import com.dotcms.saml.service.domain.SamlName;
+import com.dotcms.saml.service.internal.CredentialProvider;
+import com.dotcms.saml.service.internal.CredentialService;
+import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.service.external.SamlConfigurationService;
+import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.utils.InstanceUtil;
-import com.dotcms.saml.utils.SamlConstants;
+import com.dotcms.saml.service.external.SamlConstants;
 
 public class CredentialServiceImpl implements CredentialService {
 

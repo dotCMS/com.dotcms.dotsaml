@@ -1,10 +1,10 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.EndpointService;
-import com.dotcms.saml.service.IdentityProviderConfiguration;
-import com.dotcms.saml.service.SamlConfigurationService;
-import com.dotcms.saml.service.domain.SamlName;
-import com.dotcms.saml.utils.SamlConstants;
+import com.dotcms.saml.service.internal.EndpointService;
+import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.service.external.SamlConfigurationService;
+import com.dotcms.saml.service.external.SamlName;
+import com.dotcms.saml.service.external.SamlConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;

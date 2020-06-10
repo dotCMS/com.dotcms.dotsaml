@@ -1,16 +1,17 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.CredentialService;
-import com.dotcms.saml.service.EndpointService;
-import com.dotcms.saml.service.IdentityProviderConfiguration;
-import com.dotcms.saml.service.MessageObserver;
-import com.dotcms.saml.service.MetaDescriptorService;
-import com.dotcms.saml.service.SamlConfigurationService;
-import com.dotcms.saml.service.SamlException;
-import com.dotcms.saml.service.SamlService;
+import com.dotcms.saml.service.internal.CredentialService;
+import com.dotcms.saml.service.internal.EndpointService;
+import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.service.external.MessageObserver;
+import com.dotcms.saml.service.internal.MetaDescriptorService;
+import com.dotcms.saml.service.external.SamlConfigurationService;
+import com.dotcms.saml.service.external.SamlException;
+import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.service.external.SamlConstants;
 import org.apache.commons.io.IOUtils;
-import com.dotcms.saml.service.domain.MetaDataBean;
-import com.dotcms.saml.service.domain.SamlName;
+import com.dotcms.saml.service.external.MetaData;
+import com.dotcms.saml.service.external.SamlName;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
@@ -61,13 +62,13 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	private final XMLObjectBuilderFactory  xmlObjectBuilderFactory;
 	private final SamlConfigurationService samlConfigurationService;
 	private final MessageObserver messageObserver;
-	private final SamlService samlService;
+	private final SamlCoreService samlService;
 	private final CredentialService credentialService;
 	private final EndpointService endpointService;
 
 	public DefaultMetaDescriptorServiceImpl(final SamlConfigurationService samlConfigurationService,
 											final MessageObserver messageObserver,
-											final SamlService samlService,
+											final SamlCoreService samlService,
 											final CredentialService credentialService,
 											final EndpointService endpointService) {
 
@@ -84,9 +85,9 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 
 	/**
 	 * By default the pivot to get the {@link IDPSSODescriptor} by using
-	 * {@link com.dotcms.saml.utils.SamlConstants#DOT_SAML_IDP_METADATA_PROTOCOL_DEFAULT_VALUE}
+	 * {@link SamlConstants#DOT_SAML_IDP_METADATA_PROTOCOL_DEFAULT_VALUE}
 	 * However if there is any different protocol you want to use, please change
-	 * the {@link com.dotcms.saml.utils.SamlConstants#DOT_SAML_IDP_METADATA_PROTOCOL} to override
+	 * the {@link SamlConstants#DOT_SAML_IDP_METADATA_PROTOCOL} to override
 	 * the value on the configuration
 	 * 
 	 * @param inputStream {@link InputStream} this is the stream of the Idp-metadata.xml
@@ -97,8 +98,8 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	 * @throws Exception
 	 */
 	@Override
-	public MetaDataBean parse(final InputStream inputStream,
-							  final IdentityProviderConfiguration identityProviderConfiguration) {
+	public MetaData parse(final InputStream inputStream,
+                          final IdentityProviderConfiguration identityProviderConfiguration) {
 
 		final EntityDescriptor descriptor    = this.unmarshall(inputStream);
 		final String protocol = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
@@ -107,7 +108,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 
 		this.messageObserver.updateInfo(this.getClass(), "Parsing metadata from IdP with entityID: " + descriptor.getEntityID());
 
-		return new MetaDataBean(descriptor.getEntityID(), idpDescriptor.getErrorURL(),
+		return new MetaData(descriptor.getEntityID(), idpDescriptor.getErrorURL(),
 				this.getSingleSignOnMap(idpDescriptor), this.getSingleLogoutMap(idpDescriptor),
 				this.getCredentialSigningList(descriptor.getEntityID(), idpDescriptor));
 	}
@@ -129,15 +130,15 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	 * This creates from the runtime configuration, the {@link EntityDescriptor}
 	 * for dotCMS Service Provider. Things to keep in mind:
 	 * 1) By default WantAssertionsSigned is true, if you want to overrides it please use
-	 * {@link com.dotcms.saml.utils.SamlConstants#DOTCMS_SAML_WANT_ASSERTIONS_SIGNED} on the
+	 * {@link SamlConstants#DOTCMS_SAML_WANT_ASSERTIONS_SIGNED} on the
 	 * configuration
 	 * 2) By default AuthnRequestsSigned is true, if you want to overrides it please use
-	 * {@link com.dotcms.saml.utils.SamlConstants#DOTCMS_SAML_AUTHN_REQUESTS_SIGNED} on the configuration.
+	 * {@link SamlConstants#DOTCMS_SAML_AUTHN_REQUESTS_SIGNED} on the configuration.
 	 * 3) All Assertion Consumer Services use the url returned by:
-	 * {@link com.dotcms.saml.utils.SamlConstants#DOT_SAML_ASSERTION_CUSTOMER_ENDPOINT_URL}, this
+	 * {@link SamlConstants#DOT_SAML_ASSERTION_CUSTOMER_ENDPOINT_URL}, this
 	 * value usually will be the dotCMS landing page.
 	 * 4) By default as a formats we return: {@link NameIDType#TRANSIENT}, {@link NameIDType#PERSISTENT}
-	 * however if you want to override it change the {@link com.dotcms.saml.utils.SamlConstants#DOTCMS_SAML_NAME_ID_FORMATS} on the
+	 * however if you want to override it change the {@link SamlConstants#DOTCMS_SAML_NAME_ID_FORMATS} on the
 	 * configuration (comma separated)
 	 * 
 	 * @param identityProviderConfiguration
