@@ -5,7 +5,7 @@ import com.dotcms.saml.service.external.IdentityProviderConfiguration;
 import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.service.external.SamlConstants;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.net.MalformedURLException;
 
@@ -51,7 +51,6 @@ public class EndpointServiceImpl implements EndpointService {
 	 * 
 	 * @param identityProviderConfiguration IdpConfig
 	 * @return String
-	 * @throws MalformedURLException 
 	 */
 	@Override
 	public String getSingleLogoutEndpoint(final IdentityProviderConfiguration identityProviderConfiguration) {

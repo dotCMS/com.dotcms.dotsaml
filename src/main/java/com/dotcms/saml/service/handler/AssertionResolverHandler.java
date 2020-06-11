@@ -13,6 +13,7 @@ import java.io.Serializable;
  * @author jsanca
  */
 public interface AssertionResolverHandler extends Serializable {
+
 	int DOT_SAML_CLOCK_SKEW_DEFAULT_VALUE   = 1000;
 	int DOT_SAML_MESSAGE_LIFE_DEFAULT_VALUE = 2000;
 

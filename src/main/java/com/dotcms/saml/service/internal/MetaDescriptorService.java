@@ -13,6 +13,7 @@ import java.io.Serializable;
  * @author jsanca
  */
 public interface MetaDescriptorService extends Serializable {
+
 	String X_509 = "X.509";
 
 	/**

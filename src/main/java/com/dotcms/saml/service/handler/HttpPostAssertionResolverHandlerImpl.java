@@ -8,7 +8,7 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.decoder.MessageDecodingException;

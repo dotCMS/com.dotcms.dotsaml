@@ -1,22 +1,23 @@
 package com.dotcms.saml.utils;
 
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Constructor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Just a class to instance without exceptions.
  * 
  * @author jsanca
  */
-public class InstanceUtil
-{
+public class InstanceUtil {
+
 	/**
 	 * Creates a new instance avoiding to throw any exception, null in case it
 	 * can not be create (if an exception happens). This approach is based on a
 	 * constructor with many arguments, keep in mind the method can not find a
-	 * contructor to match with the arguments, null will be returned.
+	 * constructor to match with the arguments, null will be returned.
 	 *
 	 * @param className
 	 * @param tClass
@@ -24,32 +25,28 @@ public class InstanceUtil
 	 * @param <T>
 	 * @return T
 	 */
-	public static final <T> T newInstance( final String className, final Class<T> tClass, final Object... arguments )
-	{
+	public static final <T> T newInstance(
+			final String className, final Class<T> tClass, final Object... arguments) {
+
 		T t = null;
 		Constructor<?> constructor = null;
 		Class<?>[] parameterTypes = null;
 		Class<T> clazz = tClass;
 
-		if ( UtilMethods.isSet( className ) )
-		{
+		if ( StringUtils.isNotBlank(className)) {
+
 			clazz = getClass( className );
 		}
 
-		if ( null != clazz )
-		{
-			try
-			{
+		if ( null != clazz ) {
+
+			try {
 				parameterTypes = getTypes( arguments );
 				constructor = clazz.getDeclaredConstructor( parameterTypes );
 				t = (T) constructor.newInstance( arguments );
-			}
-			catch ( Exception e )
-			{
-				if ( Logger.isErrorEnabled( InstanceUtil.class ) )
-				{
-					Logger.error( InstanceUtil.class, e.getMessage(), e );
-				}
+			} catch (Exception e) {
+
+				Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING, e.getMessage(), e);
 			}
 		}
 
@@ -64,19 +61,18 @@ public class InstanceUtil
 	 *            - {@link Object}
 	 * @return array of Class
 	 */
-	public static final Class<?>[] getTypes( final Object... array )
-	{
+	public static final Class<?>[] getTypes(final Object... array) {
+
 		Class<?>[] parameterTypes = null;
 
-		if ( null != array )
-		{
+		if ( null != array ) {
+
 			parameterTypes = new Class[ array.length ];
 
-			for ( int i = 0; i < array.length; ++i )
-			{
+			for ( int i = 0; i < array.length; ++i ) {
+
 				parameterTypes[ i ] = array[ i ].getClass();
 			}
-
 		}
 
 		return parameterTypes;
@@ -91,27 +87,25 @@ public class InstanceUtil
 	 * @param <T>
 	 * @return T
 	 */
-	public static <T> T newInstance( final String className, final Class<T> tClass )
-	{
+	public static <T> T newInstance(final String className, final Class<T> tClass) {
+
 		T t = null;
 
-		if ( UtilMethods.isSet( className ) )
-		{
-			try
-			{
-				Logger.debug( InstanceUtil.class, "Creating an instance of: " + className );
+		if (StringUtils.isNotBlank(className)) {
+
+			try {
+
 				t = (T) Class.forName( className ).newInstance();
-			}
-			catch ( Exception e )
-			{
-				Logger.error( InstanceUtil.class, "Couldn't create from the classname: " + className + ", going to create: " + tClass.getName() );
-				Logger.error( InstanceUtil.class, e.getMessage(), e );
+			} catch (final Exception e) {
+
+				Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING,
+						"Couldn't create from the classname: " + className + ", going to create: " + tClass.getName() );
+				Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING, e.getMessage(), e );
 
 				t = newInstance( tClass );
 			}
-		}
-		else
-		{
+		} else {
+
 			t = newInstance( tClass );
 		}
 
@@ -127,19 +121,16 @@ public class InstanceUtil
 	 * @param <T>
 	 * @return T
 	 */
-	public static <T> T newInstance( final Class<T> tClass )
-	{
+	public static <T> T newInstance(final Class<T> tClass) {
+
 		T t = null;
 
-		try
-		{
-			Logger.debug( InstanceUtil.class, "Creating an instance of: " + tClass.getName() );
+		try {
 			t = tClass.newInstance();
-		}
-		catch ( Exception e1 )
-		{
-			Logger.error( InstanceUtil.class, "Couldn't create from the class: " + tClass.getName() );
-			Logger.error( InstanceUtil.class, e1.getMessage(), e1 );
+		} catch (final Exception e1) {
+
+			Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING, "Couldn't create from the class: " + tClass.getName() );
+			Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING, e1.getMessage(), e1 );
 			t = null;
 		}
 
@@ -154,19 +145,17 @@ public class InstanceUtil
 	 *            {@link String}
 	 * @return Class
 	 */
-	public static Class getClass( final String className )
-	{
+	public static Class getClass(final String className) {
 		Class clazz = null;
 
-		if ( UtilMethods.isSet( className ) )
-		{
-			try
-			{
+		if (StringUtils.isNotBlank(className)){
+
+			try {
+
 				clazz = Class.forName( className );
-			}
-			catch ( ClassNotFoundException e )
-			{
-				Logger.error( InstanceUtil.class, e.getMessage(), e );
+			} catch ( ClassNotFoundException e ) {
+
+				Logger.getLogger(InstanceUtil.class.getName()).log(Level.WARNING, e.getMessage(), e );
 				clazz = null;
 			}
 		}

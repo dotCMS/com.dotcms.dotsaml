@@ -16,7 +16,7 @@ import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.opensaml.core.criterion.EntityIdCriterion;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;

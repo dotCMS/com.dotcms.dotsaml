@@ -19,7 +19,7 @@ import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.messaging.context.MessageContext;

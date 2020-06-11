@@ -5,7 +5,7 @@ import com.dotcms.saml.service.external.MessageObserver;
 import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.utils.InstanceUtil;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
 import java.util.Map;
