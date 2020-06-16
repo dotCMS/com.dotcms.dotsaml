@@ -1,5 +1,10 @@
 package com.dotcms.saml.service.external;
 
+/**
+ * This service allows the interaction between some idp configuration and the properties itself.
+ * It basically resolves the value or the default if the value does not exists.
+ * @author jsanca
+ */
 public interface SamlConfigurationService {
 
     /**

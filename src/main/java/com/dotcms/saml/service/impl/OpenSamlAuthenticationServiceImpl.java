@@ -81,6 +81,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
             this.messageObserver.updateInfo(this.getClass(), "InitService now...");
             this.initializer.init(context);
+        } else {
+
+            this.messageObserver.updateInfo(this.getClass(), "Saml Services were already started.");
         }
     }
 

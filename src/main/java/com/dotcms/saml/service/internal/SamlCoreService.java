@@ -18,7 +18,7 @@ import org.opensaml.security.credential.Credential;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * This Service encapsulates all the Saml Stuff
+ * This Service encapsulates all Core the Saml Stuff
  *
  * @author jsanca
  */

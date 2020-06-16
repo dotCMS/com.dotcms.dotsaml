@@ -1,5 +1,11 @@
 package com.dotcms.saml.service.external;
 
+/**
+ * This interface will be implemented in order to provide the bridge between the message on the bundle and the client.
+ * This can be handle by just logging or something else when an issue happen.
+ * By now the interface is most oriented to loggers
+ * @author jsanca
+ */
 public interface MessageObserver {
 
     /**

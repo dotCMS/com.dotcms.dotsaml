@@ -39,7 +39,7 @@ dependencies {
 }
 
 
-jar.baseName = 'com.dotcms.saml'
+jar.baseName = 'com.dotcms.samlbundle'
 /////////////////////////
 //Plugin jar
 /////////////////////////
@@ -50,14 +50,11 @@ jar {
                 'Bundle-Description': 'dotCMS - SAML Provider',
                 'Bundle-DocURL': 'https://dotcms.com/',
                 'Bundle-Activator': 'com.dotcms.saml.osgi.Activator',
+                'Export-Package':   'com.dotcms.saml.ogi,com.dotcms.saml.service.external',
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
                     javax.servlet.http;version=0,
                     javax.servlet;version=0,
-                    com.dotmarketing.filters;version=0,
-                    com.dotmarketing.osgi;version=0,
-                    com.dotmarketing.util;version=0,
-                    com.dotmarketing.exception;version=0,
                     org.apache.felix.http.api;version=0,
                     org.osgi.framework;version=0,
                     org.osgi.service.http;version=0

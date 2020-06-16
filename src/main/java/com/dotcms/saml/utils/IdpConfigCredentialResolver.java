@@ -98,14 +98,14 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 			identityProviderConfiguration = identityProviderConfigurationFactory.findIdentityProviderConfigurationById(id);
 		} catch (final Exception e) {
 
-			this.messageObserver.updateError(this.getClass(), "Exception while reading IdpConfig data for ID: {}", id);
+			this.messageObserver.updateError(this.getClass(), "Exception while reading IdpConfig data for ID: {0}", id);
 			throw new ResolverException("Exception while reading IdpConfig data", e);
 
 		}
 
 		if (identityProviderConfiguration == null) {
 
-			this.messageObserver.updateError(this.getClass(), "Unable to located IdpConfig file with ID: {}", id);
+			this.messageObserver.updateError(this.getClass(), "Unable to located IdpConfig file with ID: {0}", id);
 			throw new ResolverException("Unable to located IdpConfig file with ID:");
 		}
 
