@@ -18,6 +18,8 @@ public interface SamlAuthenticationService {
     String NO_REPLY_DOTCMS_COM = "@no-reply.dotcms.com";
     String AT_SYMBOL = "@";
     String AT_ = "_at_";
+    String SAML_NAME_ID = "SAMLNameID";
+    String SAML_SESSION_INDEX = "SAMLSessionIndex";
 
 
     void initService (Map<String, Object> context);
@@ -49,10 +51,11 @@ public interface SamlAuthenticationService {
      *
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
+     * @param nameID   {@link Object} represents the name id stored usually on the session.
      * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
      */
     void logout(final HttpServletRequest request, final HttpServletResponse response,
-                final NameID nameID, final String sessionIndexValue,
+                final Object nameID, final String sessionIndexValue,
                 final IdentityProviderConfiguration identityProviderConfiguration);
 
     /**

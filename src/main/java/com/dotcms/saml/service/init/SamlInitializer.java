@@ -30,7 +30,7 @@ public class SamlInitializer implements Initializer {
 	}
 
 	@Override
-	public void init(final Map<String, Object> context) {
+	public synchronized void init(final Map<String, Object> context) {
 
 		final JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
 

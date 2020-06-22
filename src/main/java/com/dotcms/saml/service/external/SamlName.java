@@ -301,7 +301,12 @@ public enum SamlName {
 	 * By default after each login, and if the user already exists, we will try to update the name, lastname and email with the values from the assertion
 	 * If you want the code to ignore the email you should set this value to false.
 	 */
-	DOTCMS_SAML_LOGIN_UPDATE_EMAIL("login.email.update");
+	DOTCMS_SAML_LOGIN_UPDATE_EMAIL("login.email.update"),
+
+	/**
+	 * In case the session wants to be renew, should be true by default.
+	 */
+	DOT_RENEW_SESSION("renew.session");
 
 	private final String propertyName;
 
@@ -312,6 +317,7 @@ public enum SamlName {
 	public String getPropertyName() {
 		return propertyName;
 	}
+
 
 	/**
 	 * Find the enum constant based on propertyName ;
@@ -333,4 +339,10 @@ public enum SamlName {
 		return null;
 	}
 
+	@Override
+	public String toString() {
+		return "SamlName{" +
+				"propertyName='" + propertyName + '\'' +
+				'}';
+	}
 }

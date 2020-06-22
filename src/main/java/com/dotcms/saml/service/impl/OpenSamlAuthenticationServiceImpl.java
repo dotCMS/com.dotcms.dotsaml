@@ -123,12 +123,12 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     @Override
     public void logout(final HttpServletRequest  request,
                        final HttpServletResponse response,
-                       final NameID nameID,
+                       final Object nameID,
                        final String sessionIndexValue,
                        final IdentityProviderConfiguration identityProviderConfiguration) {
 
         final MessageContext context      = new MessageContext(); // main context
-        final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(identityProviderConfiguration, nameID, sessionIndexValue);
+        final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(identityProviderConfiguration, NameID.class.cast(nameID), sessionIndexValue);
 
         context.setMessage(logoutRequest);
 

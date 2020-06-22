@@ -2,6 +2,8 @@ package com.dotcms.saml.service.external;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * This interface provides to the SAML bundle the configuration needed per IDP per host.
@@ -62,4 +64,10 @@ public interface IdentityProviderConfiguration {
      * @return File
      */
     File getPrivateKey();
+
+    /**
+     * Get the optional properties for the SAML configuration
+     * @return Map
+     */
+    Map<String, Object> getOptionalProperties();
 }
