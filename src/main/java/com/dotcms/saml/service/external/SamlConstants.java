@@ -47,5 +47,27 @@ public class SamlConstants {
 	 * Default SAML User role
 	 */
 	public static final String DOTCMS_SAML_USER_ROLE = "SAML User";
+
+	/**
+	 * Optional key to configure the strategy to sync the roles from IDP to
+	 * DOTCMS Remove user from all roles, add to roles from IdP & saml_user_role
+	 * (if set) DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = " all"; Remove user from all
+	 * roles, add to roles from IdP DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
+	 * Remove user from all roles, add to roles from saml_user_role (if set).
+	 * Ignore roles from IdP. DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE =
+	 * "staticonly; Do not alter existing user roles, add to roles from
+	 * saml_user_role (if set). Ignore roles from IdP.
+	 * DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd;
+	 * DOTCMS_SAML_BUILD_ROLES_NONE_VALUE Do not alter user roles in any way
+	 */
+	public static final String DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = "all";
+
+	public static final String DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
+
+	public static final String DOTCMS_SAML_BUILD_ROLES_NONE_VALUE = "none";
+
+	public static final String DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd";
+
+	public static final String DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE = "staticonly";
 	
 }
