@@ -61,6 +61,7 @@ public interface SamlConfigurationService {
     default Map<String, String>  createInitialMap() {
 
         return new ImmutableMap.Builder<String, String>()
+                .put(SamlName.DOT_SAML_ENABLE.getPropertyName(),                        "true")
                 .put(SamlName.DOT_SAML_ACCESS_FILTER_VALUES.getPropertyName(),          null)
                 .put(SamlName.DOTCMS_SAML_AUTHN_COMPARISON_TYPE.getPropertyName(),      null)
                 .put(SamlName.DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF.getPropertyName(),    AuthnContext.PASSWORD_AUTHN_CTX)

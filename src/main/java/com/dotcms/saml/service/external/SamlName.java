@@ -11,11 +11,54 @@ public enum SamlName {
 
 
 	/**
+	 * To set enable or disable an idp configuration
+	 */
+	DOT_SAML_ENABLE( "enable"),
+
+
+	/**
+	 * Id for the Issuer, it is the SP identifier on the IdP
+	 */
+	DOT_SAML_SERVICE_PROVIDER_ISSUER_URL("sPIssuerURL"),
+
+	/**
+	 * Name for our SP
+	 */
+	DOT_SAML_IDENTITY_PROVIDER_NAME("idpName"),
+
+	/**
+	 * SP Endpoint hostname
+	 */
+	DOT_SAML_SERVICE_PROVIDER_HOST_NAME("sPEndpointHostname"),
+
+	/**
+	 * Validation Type: assertion only, response only or both
+	 */
+	DOT_SAML_SIGNATURE_VALIDATION_TYPE("signatureValidationType"),
+
+	/**
+	 * XML witht the identity provider metadata
+	 */
+	DOT_SAML_IDENTITY_PROVIDER_METADATA_FILE("idPMetadataFile"),
+
+	/**
+	 * Private key
+	 */
+	DOT_SAML_PRIVATE_KEY_FILE("privateKey"),
+
+	/**
+	 * Public Cert
+	 */
+	DOT_SAML_PUBLIC_CERT_FILE("publicCert"),
+
+	////
+
+	/**
 	 * By default we do not filter anything, but if there is some special cases
 	 * (url's) you want to avoid the authentication check, add here the values
 	 * comma separated.
 	 */
-	DOT_SAML_ACCESS_FILTER_VALUES( "access.filter.values"),
+	DOT_SAML_ACCESS_FILTER_VALUES("access.filter.values"),
 	
 	/**
 	 * By default dotCMS uses:

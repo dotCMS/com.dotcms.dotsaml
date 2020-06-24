@@ -66,8 +66,16 @@ public interface IdentityProviderConfiguration {
     File getPrivateKey();
 
     /**
-     * Get the optional properties for the SAML configuration
-     * @return Map
+     * Get the optional property for the SAML configuration
+     * @param propertyKey {@link String}
+     * @return Object
      */
-    Map<String, Object> getOptionalProperties();
+    Object getOptionalProperty(String propertyKey);
+
+    /**
+     * Returns true if the optional property exists
+     * @param propertyKey {@link String}
+     * @return boolean
+     */
+    boolean containsOptionalProperty(String propertyKey);
 }
