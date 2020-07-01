@@ -1,6 +1,6 @@
 package com.dotcms.saml.service.handler;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfiguration;
 import org.opensaml.saml.saml2.core.Assertion;
 
 import javax.servlet.http.HttpServletRequest;

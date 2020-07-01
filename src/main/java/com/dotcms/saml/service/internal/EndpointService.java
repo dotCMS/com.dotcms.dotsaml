@@ -1,6 +1,6 @@
 package com.dotcms.saml.service.internal;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfiguration;
 
 public interface EndpointService {
 

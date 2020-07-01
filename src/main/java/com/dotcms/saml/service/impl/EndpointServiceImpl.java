@@ -1,13 +1,11 @@
 package com.dotcms.saml.service.impl;
 
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.EndpointService;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.service.external.SamlConstants;
 import org.apache.commons.lang.StringUtils;
-
-import java.net.MalformedURLException;
 
 /**
  * Provides a helper for endpoint urls of the SAML config.

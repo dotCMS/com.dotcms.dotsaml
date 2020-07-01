@@ -1,9 +1,9 @@
 package com.dotcms.saml.service.handler;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.MessageObserver;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlName;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.utils.InstanceUtil;
 import org.apache.commons.lang.StringUtils;
 
@@ -22,7 +22,7 @@ public class AssertionResolverHandlerFactory implements Serializable {
 	private static final long serialVersionUID = 2434118681822205248L;
 
 	private final SamlConfigurationService samlConfigurationService;
-	private final MessageObserver          messageObserver;
+	private final MessageObserver messageObserver;
 	private static final Map<String, AssertionResolverHandler> assertionResolverHandlerInstancesMap = new ConcurrentHashMap<>();
 
 	public AssertionResolverHandlerFactory(final SamlConfigurationService samlConfigurationService,

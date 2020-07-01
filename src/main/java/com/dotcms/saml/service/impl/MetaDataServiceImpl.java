@@ -1,12 +1,15 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.MessageObserver;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
+import com.dotcms.saml.service.internal.CredentialService;
+import com.dotcms.saml.service.internal.EndpointService;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
-import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.MetaData;
-import com.dotcms.saml.service.external.SamlName;
+import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.InstanceUtil;
 import org.opensaml.security.credential.Credential;
 
@@ -44,7 +47,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 		final MetaDescriptorService descriptorParser = InstanceUtil.newInstance(
 				this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
 						SamlName.DOT_SAML_IDP_METADATA_PARSER_CLASS_NAME),
-				DefaultMetaDescriptorServiceImpl.class);
+				()-> InstanceUtil.getInstance(MetaDescriptorService.class));
 
 		try (InputStream inputStream = Files.newInputStream(identityProviderConfiguration.getIdPMetadataFile())) {
 

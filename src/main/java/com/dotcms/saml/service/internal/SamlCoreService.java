@@ -1,6 +1,6 @@
 package com.dotcms.saml.service.internal;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfiguration;
 import org.opensaml.saml.saml2.core.ArtifactResponse;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.AuthnContextComparisonTypeEnumeration;

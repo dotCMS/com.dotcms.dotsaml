@@ -1,7 +1,7 @@
 package com.dotcms.saml.service.internal;
 
+import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.service.external.MetaData;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 
 import java.io.InputStream;

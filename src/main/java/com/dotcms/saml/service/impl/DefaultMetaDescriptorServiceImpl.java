@@ -1,17 +1,17 @@
 package com.dotcms.saml.service.impl;
 
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.CredentialService;
 import com.dotcms.saml.service.internal.EndpointService;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.MessageObserver;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
-import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlConstants;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.saml.service.external.MetaData;
-import com.dotcms.saml.service.external.SamlName;
 import net.shibboleth.utilities.java.support.xml.ParserPool;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;

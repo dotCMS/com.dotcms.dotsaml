@@ -14,6 +14,7 @@ configurations {
 dependencies {
 
     //compile('com.dotcms:dotcms:5.3.1') { transitive = true }
+    compile files("./dotcms_master.jar")
     compile(group: 'org.apache.felix', name: 'org.apache.felix.main', version: '5.6.10') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
@@ -22,7 +23,7 @@ dependencies {
     compile "javax.servlet:javax.servlet-api:3.1.0"
     compile "commons-io:commons-io:2.6"
 
-    compile  'org.opensaml:opensaml-core:3.4.5'
+    /*compile  'org.opensaml:opensaml-core:3.4.5'
     compile  'org.opensaml:opensaml-saml-api:3.4.5'
     compile  'org.opensaml:opensaml-security-api:3.4.5'
     compile  'org.opensaml:opensaml-xmlsec-impl:3.4.5'
@@ -35,7 +36,22 @@ dependencies {
     compile  'org.opensaml:opensaml-storage-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-api:3.4.5'
     compile  'org.opensaml:opensaml-xacml-saml-api:3.4.5'
-    compile  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'
+    compile  'org.opensaml:opensaml-xacml-saml-impl:3.4.5'*/
+
+    compile  'org.opensaml:opensaml-core:3.3.1'
+    compile  'org.opensaml:opensaml-saml-api:3.3.1'
+    compile  'org.opensaml:opensaml-security-api:3.3.1'
+    compile  'org.opensaml:opensaml-xmlsec-impl:3.3.1'
+    compile  'org.opensaml:opensaml-xmlsec-api:3.3.1'
+    compile  'org.opensaml:opensaml-security-impl:3.3.1'
+    compile  'org.opensaml:opensaml-messaging-impl:3.3.1'
+    compile  'org.opensaml:opensaml-messaging-api:3.3.1'
+
+    compile  ('org.opensaml:opensaml-storage-impl:3.3.1'){ transitive = false }
+    compile  'org.opensaml:opensaml-storage-api:3.3.1'
+    compile  'org.opensaml:opensaml-xacml-api:3.3.1'
+    compile  'org.opensaml:opensaml-xacml-saml-api:3.3.1'
+    compile  'org.opensaml:opensaml-xacml-saml-impl:3.3.1'
 }
 
 
@@ -50,14 +66,44 @@ jar {
                 'Bundle-Description': 'dotCMS - SAML Provider',
                 'Bundle-DocURL': 'https://dotcms.com/',
                 'Bundle-Activator': 'com.dotcms.saml.osgi.Activator',
-                'Export-Package':   'com.dotcms.saml.ogi,com.dotcms.saml.service.external',
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
                     javax.servlet.http;version=0,
                     javax.servlet;version=0,
+                    com.dotmarketing.osgi;version=0,
                     org.apache.felix.http.api;version=0,
                     org.osgi.framework;version=0,
-                    org.osgi.service.http;version=0
+                    org.osgi.service.http;version=0,
+                    com.dotcms.saml;version=0,
+                    !org.bouncycastle.*,!com.google.common.*
+                ''',
+                'Include-Resource': '''
+                        lib/commons-codec-1.10.jar;lib:=true,
+                        lib/joda-time-2.9.jar;lib:=true,
+                        lib/commons-lang-2.4.jar;lib:=true,
+                        lib/guava-20.0.jar;lib:=true,
+                        lib/java-support-7.3.0.jar;lib:=true,
+                        lib/metrics-core-4.0.0.jar;lib:=true,     
+                        lib/xmlsec-1.3.0.jar;lib:=true,
+                        lib/opensaml-core-3.3.1.jar;lib:=true,
+                        lib/opensaml-messaging-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-messaging-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-profile-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-profile-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-saml-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-saml-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-security-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-security-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-soap-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-soap-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-storage-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-storage-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-xacml-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-xacml-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-xacml-saml-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-xacml-saml-impl-3.3.1.jar;lib:=true,
+                        lib/opensaml-xmlsec-api-3.3.1.jar;lib:=true,
+                        lib/opensaml-xmlsec-impl-3.3.1.jar;lib:=true
                 '''
         )
     }

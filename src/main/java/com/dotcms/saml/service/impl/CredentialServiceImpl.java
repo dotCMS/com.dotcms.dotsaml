@@ -1,10 +1,10 @@
 package com.dotcms.saml.service.impl;
 
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.CredentialProvider;
 import com.dotcms.saml.service.internal.CredentialService;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.utils.InstanceUtil;
 import com.dotcms.saml.service.external.SamlConstants;
 

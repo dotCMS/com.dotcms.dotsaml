@@ -1,11 +1,10 @@
 package com.dotcms.saml.service.init;
 
-import com.dotcms.saml.service.external.MessageObserver;
 import net.shibboleth.utilities.java.support.xml.BasicParserPool;
 import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
-import org.opensaml.xmlsec.config.impl.JavaCryptoValidationInitializer;
+import org.opensaml.xmlsec.config.JavaCryptoValidationInitializer;
 
 import java.security.Provider;
 import java.security.Security;
@@ -22,55 +21,76 @@ public class SamlInitializer implements Initializer {
 
 	private static final long serialVersionUID = -5869927082029401479L;
 
-	private final AtomicBoolean   initDone = new AtomicBoolean( false );
-	private final MessageObserver messageObserver;
+	private final static AtomicBoolean initDone = new AtomicBoolean( false );
 
-	public SamlInitializer(final MessageObserver messageObserver) {
-		this.messageObserver = messageObserver;
+	public SamlInitializer() {
 	}
 
 	@Override
 	public synchronized void init(final Map<String, Object> context) {
 
-		final JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
+		final ClassLoader loader =
+				null != context && context.containsKey("loader")?
+					(ClassLoader)context.get("loader"):null;
+		final Thread      thread = Thread.currentThread();
 
 		try {
 
-			this.messageObserver.updateInfo(this.getClass(), "Initializing Java Crypto validator");
+			if (null != loader) {
+
+				thread.setContextClassLoader(InitializationService.class.getClassLoader());
+			}
+
+			System.out.println("Initializing SAML..." );
+			InitializationService.initialize();
+
+			System.out.println("SAML Init DONE" );
+		} catch (final InitializationException e) {
+
+			throw new RuntimeException( "Initialization failed", e );
+		} finally {
+
+			if (null != loader) {
+
+				thread.setContextClassLoader(loader);
+			}
+		}
+
+		System.out.println("Setting basic parser pool");
+
+		if (XMLObjectProviderRegistrySupport.getParserPool() == null ) {
+
+			XMLObjectProviderRegistrySupport.setParserPool(new BasicParserPool());
+		}
+
+		System.out.println("Doing instance of Java Crypto validator");
+
+		try {
+
+			final JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
+			System.out.println("Initializing Java Crypto validator");
 			javaCryptoValidationInitializer.init();
 		} catch (final InitializationException initializationException) {
 
 			initializationException.printStackTrace();
+		} catch (final Exception e) {
+
+			e.printStackTrace();
 		}
 
-		this.messageObserver.updateInfo(this.getClass(), "Getting the Security Providers");
+		System.out.println("Getting the Security Providers");
 		for (final Provider jceProvider : Security.getProviders()) {
 
-			this.messageObserver.updateInfo(this.getClass(), jceProvider.getInfo());
+			System.out.println(jceProvider.getInfo());
 		}
 
-		try {
-
-			this.messageObserver.updateInfo( this.getClass(), "Initializing SAML..." );
-			InitializationService.initialize();
-			
-			if (XMLObjectProviderRegistrySupport.getParserPool() == null ) {
-
-				XMLObjectProviderRegistrySupport.setParserPool(new BasicParserPool());
-			}
-		} catch ( InitializationException e ) {
-
-			throw new RuntimeException( "Initialization failed", e );
-		}
-
-		this.initDone.set( true );
+		initDone.set( true );
 	}
 
 	@Override
-	public boolean isInitializationDone()
-	{
+	public boolean isInitializationDone() {
 
-		return this.initDone.get();
+		return initDone.get();
 	}
 
 }

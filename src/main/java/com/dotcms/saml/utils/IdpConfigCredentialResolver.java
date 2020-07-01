@@ -1,8 +1,8 @@
 package com.dotcms.saml.utils;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
-import com.dotcms.saml.service.external.MessageObserver;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.IdentityProviderConfigurationFactory;
+import com.dotcms.saml.MessageObserver;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
 import org.apache.commons.io.FileUtils;

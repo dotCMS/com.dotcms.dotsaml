@@ -1,19 +1,19 @@
 package com.dotcms.saml.service.impl;
 
+import com.dotcms.saml.Attributes;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.external.AttributesNotFoundException;
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.MessageObserver;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.external.NotNullEmailAllowedException;
-import com.dotcms.saml.service.external.SamlAuthenticationService;
-import com.dotcms.saml.service.external.SamlConfigurationService;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlUnauthorizedException;
-import com.dotcms.saml.service.external.Attributes;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
@@ -63,7 +63,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                                              final SamlCoreService samlCoreService,
                                              final SamlConfigurationService samlConfigurationService,
                                              final MessageObserver messageObserver,
-                                             final MetaDescriptorService metaDescriptorService) {
+                                             final MetaDescriptorService metaDescriptorService,
+                                             final Initializer initializer) {
 
         this.assertionResolverHandlerFactory = assertionResolverHandlerFactory;
         this.samlCoreService          = samlCoreService;
@@ -71,7 +72,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.messageObserver          = messageObserver;
         this.metaDescriptorService    = metaDescriptorService;
         this.metaDataXMLPrinter       = new MetaDataXMLPrinter();
-        this.initializer              = new SamlInitializer(this.messageObserver);
+        this.initializer              = initializer;
     }
 
     @Override
@@ -162,8 +163,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
         } catch (Exception e) {
 
+            final NameID nameID = (NameID) attributes.getNameID();
             this.messageObserver.updateError(this.getClass(),
-                    "An error occurred when loading user with ID '" + attributes.getNameID().getValue() + "'", e);
+                    "An error occurred when loading user with ID '" + nameID.getValue() + "'", e);
         }
 
         return attributes;
@@ -354,7 +356,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (StringUtils.isBlank((originalAttributes.getEmail()))) {
 
-            attrBuilder.email(this.createNoReplyEmail(originalAttributes.getNameID().getValue(), allowNullEmail));
+            final NameID nameID = (NameID) originalAttributes.getNameID();
+            attrBuilder.email(this.createNoReplyEmail(nameID.getValue(), allowNullEmail));
         } else {
 
             attrBuilder.email(originalAttributes.getEmail());

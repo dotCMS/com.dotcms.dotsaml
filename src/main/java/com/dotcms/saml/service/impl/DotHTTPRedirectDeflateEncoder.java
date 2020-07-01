@@ -1,6 +1,6 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.external.MessageObserver;
+import com.dotcms.saml.MessageObserver;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import net.shibboleth.utilities.java.support.net.URLBuilder;
 import org.opensaml.messaging.context.MessageContext;

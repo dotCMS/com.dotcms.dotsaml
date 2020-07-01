@@ -1,11 +1,11 @@
 package com.dotcms.saml.service.handler;
 
-import com.dotcms.saml.service.external.IdentityProviderConfiguration;
-import com.dotcms.saml.service.external.MessageObserver;
-import com.dotcms.saml.service.external.SamlConfigurationService;
+import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlException;
-import com.dotcms.saml.service.external.SamlName;
 import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;

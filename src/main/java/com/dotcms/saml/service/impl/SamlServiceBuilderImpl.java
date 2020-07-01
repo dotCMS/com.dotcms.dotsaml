@@ -1,24 +1,40 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.saml.service.external.IdentityProviderConfigurationFactory;
-import com.dotcms.saml.service.external.MessageObserver;
-import com.dotcms.saml.service.external.SamlAuthenticationService;
-import com.dotcms.saml.service.external.SamlConfigurationService;
-import com.dotcms.saml.service.external.SamlServiceBuilder;
+import com.dotcms.saml.IdentityProviderConfigurationFactory;
+import com.dotcms.saml.MessageObserver;
+import com.dotcms.saml.SamlAuthenticationService;
+import com.dotcms.saml.SamlConfigurationService;
+import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
+import com.dotcms.saml.service.init.Initializer;
+import com.dotcms.saml.service.init.SamlInitializer;
 import com.dotcms.saml.service.internal.CredentialService;
 import com.dotcms.saml.service.internal.EndpointService;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.utils.InstanceUtil;
+
+import java.util.Collections;
 
 public class SamlServiceBuilderImpl implements SamlServiceBuilder {
+
+
+    private Initializer initializer = null;
+
+    @Override
+    public SamlConfigurationService buildSamlConfigurationService() {
+        return new SamlConfigurationServiceImpl();
+    }
 
     @Override
     public SamlAuthenticationService buildAuthenticationService(final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
                                                                 final MessageObserver messageObserver,
                                                                 final SamlConfigurationService samlConfigurationService) {
 
+        if (null == this.initializer) {
+            this.initFramework();
+        }
         final CredentialService credentialService = new CredentialServiceImpl(samlConfigurationService);
         final EndpointService endpointService     = new EndpointServiceImpl(samlConfigurationService);
         final MetaDataService metaDataService     = new MetaDataServiceImpl(samlConfigurationService, messageObserver);
@@ -30,10 +46,16 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
         final MetaDescriptorService metaDescriptorService =
                 new DefaultMetaDescriptorServiceImpl(samlConfigurationService, messageObserver,
                         samlCoreService, credentialService, endpointService);
-
+        InstanceUtil.putInstance(MetaDescriptorService.class, metaDescriptorService);
         messageObserver.updateInfo(this.getClass(), "Creating a new SamlAuthenticationService");
 
         return new OpenSamlAuthenticationServiceImpl(assertionResolverHandlerFactory, samlCoreService,
-                samlConfigurationService, messageObserver, metaDescriptorService);
+                samlConfigurationService, messageObserver, metaDescriptorService, this.initializer);
+    }
+
+    private void initFramework() {
+
+        this.initializer = new SamlInitializer();
+        this.initializer.init(Collections.emptyMap());
     }
 }
