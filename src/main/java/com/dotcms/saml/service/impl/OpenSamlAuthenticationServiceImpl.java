@@ -7,15 +7,14 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.external.AttributesNotFoundException;
-import com.dotcms.saml.service.init.Initializer;
-import com.dotcms.saml.service.init.SamlInitializer;
-import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.external.NotNullEmailAllowedException;
-import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlUnauthorizedException;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
+import com.dotcms.saml.service.init.Initializer;
+import com.dotcms.saml.service.internal.MetaDescriptorService;
+import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
@@ -43,6 +42,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -486,5 +487,33 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
             throw new SamlException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String getValue(final Object samlObject) {
+
+        if (samlObject instanceof NameID) {
+
+            return NameID.class.cast(samlObject).getValue();
+        }
+
+        return null != samlObject? samlObject.toString(): null;
+    }
+
+    @Override
+    public List<String> getValues(final Object samlObject) {
+
+        List<String> values = null;
+
+        if (samlObject instanceof Attribute) {
+
+            values = new ArrayList<>();
+            for (final XMLObject roleObject : Attribute.class.cast(samlObject).getAttributeValues()) {
+
+                values.add(roleObject.getDOM().getFirstChild().getNodeValue());
+            }
+        }
+
+        return values;
     }
 }

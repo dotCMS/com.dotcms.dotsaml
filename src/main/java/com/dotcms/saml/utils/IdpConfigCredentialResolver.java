@@ -5,7 +5,8 @@ import com.dotcms.saml.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.MessageObserver;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.input.ReaderInputStream;
+import org.apache.commons.lang.StringUtils;
 import org.opensaml.core.criterion.EntityIdCriterion;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.credential.UsageType;
@@ -13,11 +14,10 @@ import org.opensaml.security.credential.impl.AbstractCriteriaFilteringCredential
 import org.opensaml.security.x509.BasicX509Credential;
 import org.opensaml.xml.util.Base64;
 
-import java.io.File;
+import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -112,21 +112,16 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		return identityProviderConfiguration;
 	}
 
-	protected X509Certificate getPublicCert(final File certFile) throws ResolverException {
+	protected X509Certificate getPublicCert(final char[] certFile) throws ResolverException {
 
 		X509Certificate cert = null;
 
-		if (certFile == null) {
-			this.messageObserver.updateError(this.getClass(), "Public Key file cannot be null!");
+		if (certFile == null || certFile.length == 0) {
+			this.messageObserver.updateError(this.getClass(), "Public Key cannot be null!");
 			throw new ResolverException("Public Key file cannot be null!");
 		}
 
-		if (!certFile.exists()) {
-			this.messageObserver.updateError(this.getClass(), "Public Key file must Exist!");
-			throw new ResolverException("Public Key file must Exist!");
-		}
-
-		try (InputStream inputStream = Files.newInputStream(certFile.toPath())) {
+		try (InputStream inputStream = new ReaderInputStream(new CharArrayReader(certFile), StandardCharsets.UTF_8)) {
 
 			final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
 			cert = (X509Certificate) certificateFactory.generateCertificate(inputStream);
@@ -150,40 +145,34 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		return cert;
 	}
 
-	protected PrivateKey getPrivateKey(final File keyFile) throws ResolverException {
+	protected PrivateKey getPrivateKey(final char[] keyFile) throws ResolverException {
 
 		PrivateKey privateKey = null;
 
-		if (keyFile == null) {
+		if (keyFile == null || keyFile.length == 0) {
 
-			this.messageObserver.updateError(this.getClass(),"Private Key file cannot be null!");
+			this.messageObserver.updateError(this.getClass(),"Private Key cannot be null!");
 			throw new ResolverException("Private Key file cannot be null!");
-		}
-
-		if (!keyFile.exists()) {
-
-			this.messageObserver.updateError(this.getClass(),"Private Key file must Exist!");
-			throw new ResolverException("Private Key file must Exist!");
 		}
 
 		try {
 			// TODO This locks in the private key type to RSA. We will need to review.
-			String stringPrivateKey = FileUtils.readFileToString(keyFile, StandardCharsets.UTF_8);
-			stringPrivateKey = stringPrivateKey.replace("-----BEGIN PRIVATE KEY-----\n", "");
-			stringPrivateKey = stringPrivateKey.replace("-----END PRIVATE KEY-----", "");
+			String stringPrivateKey = new String(keyFile);
+			stringPrivateKey = stringPrivateKey.replace("-----BEGIN PRIVATE KEY-----\n", StringUtils.EMPTY);
+			stringPrivateKey = stringPrivateKey.replace("-----END PRIVATE KEY-----", StringUtils.EMPTY);
 
 			final KeyFactory keyFactory            = KeyFactory.getInstance("RSA");
 			final PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(Base64.decode(stringPrivateKey));
 			privateKey = keyFactory.generatePrivate(keySpecPKCS8);
-		} catch (IOException e) {
-
-			this.messageObserver.updateError(this.getClass(),"Unable to read Private Key File");
-			throw new ResolverException("Unable to read Private Key File", e);
-
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 
 			this.messageObserver.updateError(this.getClass(),"Unable to translate Private Key");
 			throw new ResolverException("Unable to translate Private Key", e);
+		}  catch (Exception e) {
+
+			this.messageObserver.updateError(this.getClass(),"Unable to read Private Key File");
+			throw new ResolverException("Unable to read Private Key File", e);
+
 		}
 
 		if (privateKey == null) {

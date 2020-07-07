@@ -4,17 +4,16 @@ import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
-import com.dotcms.saml.service.internal.CredentialService;
-import com.dotcms.saml.service.internal.EndpointService;
+import com.dotcms.saml.service.external.MetaData;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
-import com.dotcms.saml.service.external.MetaData;
-import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.InstanceUtil;
+import org.apache.commons.io.input.ReaderInputStream;
 import org.opensaml.security.credential.Credential;
 
+import java.io.CharArrayReader;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 /**
@@ -49,7 +48,8 @@ public class MetaDataServiceImpl implements MetaDataService {
 						SamlName.DOT_SAML_IDP_METADATA_PARSER_CLASS_NAME),
 				()-> InstanceUtil.getInstance(MetaDescriptorService.class));
 
-		try (InputStream inputStream = Files.newInputStream(identityProviderConfiguration.getIdPMetadataFile())) {
+		try (InputStream inputStream = new ReaderInputStream(new CharArrayReader(
+				identityProviderConfiguration.getIdPMetadataFile()), StandardCharsets.UTF_8)) {
 
 			metadataBean = descriptorParser.parse(inputStream, identityProviderConfiguration);
 		} catch (Exception exception) {
