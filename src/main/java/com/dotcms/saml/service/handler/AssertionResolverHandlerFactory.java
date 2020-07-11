@@ -81,4 +81,9 @@ public class AssertionResolverHandlerFactory implements Serializable {
 
 		return assertionResolverHandlerInstancesMap.get(className);
 	}
+
+	public void addAssertionResolverHandler (final String className, final AssertionResolverHandler handler) {
+
+		this.assertionResolverHandlerInstancesMap.put(className, handler);
+	}
 }

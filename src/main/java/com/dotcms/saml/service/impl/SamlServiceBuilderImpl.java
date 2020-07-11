@@ -6,6 +6,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
+import com.dotcms.saml.service.handler.HttpPostAssertionResolverHandlerImpl;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
 import com.dotcms.saml.service.internal.CredentialService;
@@ -47,6 +48,8 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
                 new DefaultMetaDescriptorServiceImpl(samlConfigurationService, messageObserver,
                         samlCoreService, credentialService, endpointService);
         InstanceUtil.putInstance(MetaDescriptorService.class, metaDescriptorService);
+        assertionResolverHandlerFactory.addAssertionResolverHandler(HttpPostAssertionResolverHandlerImpl.class.getName(),
+                new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
         messageObserver.updateInfo(this.getClass(), "Creating a new SamlAuthenticationService");
 
         return new OpenSamlAuthenticationServiceImpl(assertionResolverHandlerFactory, samlCoreService,

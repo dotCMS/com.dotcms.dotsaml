@@ -30,6 +30,7 @@ import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Attribute;
 import org.opensaml.saml.saml2.core.AttributeStatement;
 import org.opensaml.saml.saml2.core.AuthnRequest;
+import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
@@ -164,9 +165,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
         } catch (Exception e) {
 
-            final NameID nameID = (NameID) attributes.getNameID();
+            final String nameID = null != attributes? NameID.class.cast(attributes.getNameID()).getValue(): StringUtils.EMPTY ;
             this.messageObserver.updateError(this.getClass(),
-                    "An error occurred when loading user with ID '" + nameID.getValue() + "'", e);
+                    "An error occurred when loading user with ID '" + nameID+ "'", e);
         }
 
         return attributes;
@@ -225,6 +226,27 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateError(this.getClass(), errorMsg, e);
             throw new SamlException(errorMsg, e);
         }
+    }
+
+    /**
+     * Return the value of the /AuthnStatement@SessionIndex element in an
+     * assertion
+     *
+     * @return The value. <code>null</code>, if the assertion does not contain
+     *         the element.
+     */
+    protected String getSessionIndex(final Assertion assertion) {
+        String sessionIndex = null;
+
+        if (assertion != null && assertion.getAuthnStatements() != null) {
+            if (assertion.getAuthnStatements().size() > 0) {
+                // We only look into the first AuthnStatement
+                final AuthnStatement authnStatement = assertion.getAuthnStatements().get(0);
+                sessionIndex = authnStatement.getSessionIndex();
+            }
+        }
+
+        return sessionIndex;
     }
 
     // resolve the attributes from the assertion resolved from the OpenSaml
@@ -328,6 +350,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                 }
             });
         });
+
+        attrBuilder.sessionIndex(this.getSessionIndex(assertion));
 
         Attributes attributes = attrBuilder.build();
         this.messageObserver.updateDebug(this.getClass(), "-> Value of attributesBean = " + attributes.toString());
