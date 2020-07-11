@@ -21,6 +21,8 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
 
             case DOT_SAML_IDP_METADATA_PROTOCOL:
                 return SamlConstants.DOT_SAML_IDP_METADATA_PROTOCOL_DEFAULT_VALUE;
+            case DOTCMS_SAML_USE_ENCRYPTED_DESCRIPTOR:
+                return "false";
         }
         return null;
     }
@@ -32,7 +34,12 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
 
     @Override
     public Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName) {
-        return null;
+        switch (samlName) {
+
+            case DOTCMS_SAML_USE_ENCRYPTED_DESCRIPTOR:
+                return false;
+        }
+        return false;
     }
 
     @Override

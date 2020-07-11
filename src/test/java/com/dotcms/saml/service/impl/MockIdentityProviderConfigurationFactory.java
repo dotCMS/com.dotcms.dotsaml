@@ -3,7 +3,13 @@ package com.dotcms.saml.service.impl;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
 
+import java.security.KeyPair;
+import java.security.cert.Certificate;
+
 public class MockIdentityProviderConfigurationFactory implements IdentityProviderConfigurationFactory {
+
+    private static final KeyPair KEY_PAIR        = MockSecurityUtils.generateKeyPair();
+    private static final Certificate CERTIFICATE = MockSecurityUtils.generateCertificate(KEY_PAIR);
 
     @Override
     public IdentityProviderConfiguration findIdentityProviderConfigurationById(String s) {
@@ -45,12 +51,17 @@ public class MockIdentityProviderConfigurationFactory implements IdentityProvide
 
             @Override
             public char[] getPublicCert() {
-                return new char[0];
+                try {
+
+                    return MockSecurityUtils.formatCrtFileContents(CERTIFICATE).toCharArray();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
 
             @Override
             public char[] getPrivateKey() {
-                return new char[0];
+                return MockSecurityUtils.generatePrivateKeyAsString(KEY_PAIR).toCharArray();
             }
 
             @Override
