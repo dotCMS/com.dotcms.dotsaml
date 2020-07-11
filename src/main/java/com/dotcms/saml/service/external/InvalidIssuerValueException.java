@@ -6,12 +6,10 @@ package com.dotcms.saml.service.external;
  * @author jsanca
  */
 
-public class InvalidIssuerValueException extends RuntimeException
-{
+public class InvalidIssuerValueException extends RuntimeException {
 	private static final long serialVersionUID = 2963820217308468676L;
 
-	public InvalidIssuerValueException(String message )
-	{
-		super( message );
+	public InvalidIssuerValueException(final String message) {
+		super(message);
 	}
 }

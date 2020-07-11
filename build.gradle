@@ -52,6 +52,9 @@ dependencies {
     compile  'org.opensaml:opensaml-xacml-api:3.3.1'
     compile  'org.opensaml:opensaml-xacml-saml-api:3.3.1'
     compile  'org.opensaml:opensaml-xacml-saml-impl:3.3.1'
+
+    testCompile 'junit:junit:4.12'
+    
 }
 
 

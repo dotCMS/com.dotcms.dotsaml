@@ -36,15 +36,14 @@ public class Activator extends GenericBundleActivator {
         contextMap.put("loader", loader);
         initializer.init(contextMap);
 
-
         final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
-
-        System.out.println("SAML SAML SAML OSGI START.....");
 
         //Register the TikaServiceBuilder as a OSGI service
         this.samlServiceBuilder = context
                 .registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
                         new Hashtable<>());
+
+        System.out.println("SAML OSGI STARTED.....");
     }
 
     public void stop(final BundleContext context) throws Exception {

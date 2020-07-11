@@ -5,22 +5,18 @@ package com.dotcms.saml.service.external;
  * 
  * @author jsanca
  */
-public class SamlException extends RuntimeException
-{
+public class SamlException extends RuntimeException {
 	private static final long serialVersionUID = -3569526825729783600L;
 
-	public SamlException()
-	{
-		
+	public SamlException(){
+		super();
 	}
 
-	public SamlException(String message )
-	{
+	public SamlException(final String message) {
 		super( message );
 	}
 
-	public SamlException(String message, Throwable cause )
-	{
+	public SamlException(final String message, final Throwable cause) {
 		super( message, cause );
 	}
 }

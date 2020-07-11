@@ -11,8 +11,8 @@ import java.io.Serializable;
  * 
  * @author jsanca
  */
-public class Attributes implements Serializable
-{
+public class Attributes implements Serializable {
+
 	private static final long serialVersionUID = 1836313856887837731L;
 
 	// user email from opensaml
@@ -33,8 +33,8 @@ public class Attributes implements Serializable
 	// Saml object with the NameID.
 	private final NameID nameID;
 
-	private Attributes(final Builder builder )
-	{
+	private Attributes(final Builder builder) {
+
 		this.email = builder.email;
 		this.lastName = builder.lastName;
 		this.firstName = builder.firstName;
@@ -74,13 +74,13 @@ public class Attributes implements Serializable
 	}
 
 	@Override
-	public String toString()
-	{
+	public String toString() {
+
 		return "AttributesBean{" + "nameID='" + nameID.getValue() + '\'' + ", email='" + email + '\'' + ", lastName='" + lastName + '\'' + ", firstName='" + firstName + '\'' + ", addRoles=" + addRoles + ", roles=" + roles + '}';
 	}
 
-	public static final class Builder
-	{
+	public static final class Builder {
+
 		String email = "";
 		String lastName = "";
 		String firstName = "";
@@ -88,74 +88,61 @@ public class Attributes implements Serializable
 		Attribute roles = null;
 		NameID nameID = null;
 
-		public Builder email( String email )
-		{
+		public Builder email(final String email) {
 			this.email = email;
 			return this;
 		}
 
-		public Builder lastName( String lastName )
-		{
+		public Builder lastName(final String lastName ) {
 			this.lastName = lastName;
 			return this;
 		}
 
-		public Builder firstName( String firstName )
-		{
+		public Builder firstName(final String firstName ) {
 			this.firstName = firstName;
 			return this;
 		}
 
-		public Builder addRoles( boolean addRoles )
-		{
+		public Builder addRoles(final boolean addRoles ) {
 			this.addRoles = addRoles;
 			return this;
 		}
 
-		public Builder roles( Attribute roles )
-		{
+		public Builder roles(final Attribute roles ) {
 			this.roles = roles;
 			return this;
 		}
 
-		public Builder nameID( NameID nameID )
-		{
+		public Builder nameID( NameID nameID ) {
 			this.nameID = nameID;
 			return this;
 		}
 
-		public String getEmail()
-		{
+		public String getEmail() {
 			return email;
 		}
 
-		public String getLastName()
-		{
+		public String getLastName() {
 			return lastName;
 		}
 
-		public String getFirstName()
-		{
+		public String getFirstName() {
 			return firstName;
 		}
 
-		public boolean isAddRoles()
-		{
+		public boolean isAddRoles() {
 			return addRoles;
 		}
 
-		public Attribute getRoles()
-		{
+		public Attribute getRoles() {
 			return roles;
 		}
 
-		public NameID getNameID()
-		{
+		public NameID getNameID() {
 			return nameID;
 		}
 
-		public Attributes build()
-		{
+		public Attributes build() {
 			return new Attributes( this );
 		}
 	}

@@ -31,7 +31,7 @@ public class MetaData implements Serializable {
 	public MetaData(final String entityId, final String errorURL,
 					final Map<String, String> singleSignOnBindingLocationMap,
 					final Map<String, String> singleLogoutBindingLocationMap,
-					final List<Credential> credentialSigningList ) {
+					final List<Credential> credentialSigningList) {
 
 		this.entityId = entityId;
 		this.errorURL = errorURL;
@@ -40,28 +40,23 @@ public class MetaData implements Serializable {
 		this.singleLogoutBindingLocationMap = singleLogoutBindingLocationMap;
 	}
 
-	public String getEntityId()
-	{
+	public String getEntityId() {
 		return entityId;
 	}
 
-	public String getErrorURL()
-	{
+	public String getErrorURL() {
 		return errorURL;
 	}
 
-	public Map<String, String> getSingleSignOnBindingLocationMap()
-	{
+	public Map<String, String> getSingleSignOnBindingLocationMap() {
 		return singleSignOnBindingLocationMap;
 	}
 
-	public List<Credential> getCredentialSigningList()
-	{
+	public List<Credential> getCredentialSigningList() {
 		return credentialSigningList;
 	}
 
-	public Map<String, String> getSingleLogoutBindingLocationMap()
-	{
+	public Map<String, String> getSingleLogoutBindingLocationMap() {
 		return singleLogoutBindingLocationMap;
 	}
 }
