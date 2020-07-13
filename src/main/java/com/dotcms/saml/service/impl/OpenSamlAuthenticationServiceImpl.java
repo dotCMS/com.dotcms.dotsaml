@@ -519,6 +519,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         if (samlObject instanceof NameID) {
 
             return NameID.class.cast(samlObject).getValue();
+        } else if (samlObject instanceof XMLObject) {
+            return XMLObject.class.cast(samlObject).getDOM().getFirstChild().getNodeValue();
         }
 
         return null != samlObject? samlObject.toString(): null;
@@ -532,9 +534,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         if (samlObject instanceof Attribute) {
 
             values = new ArrayList<>();
-            for (final XMLObject roleObject : Attribute.class.cast(samlObject).getAttributeValues()) {
+            for (final XMLObject childSamlObject : Attribute.class.cast(samlObject).getAttributeValues()) {
 
-                values.add(roleObject.getDOM().getFirstChild().getNodeValue());
+                values.add(this.getValue(childSamlObject));
             }
         }
 

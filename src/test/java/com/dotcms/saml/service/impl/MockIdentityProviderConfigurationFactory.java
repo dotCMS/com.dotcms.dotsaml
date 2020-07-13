@@ -2,7 +2,11 @@ package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
+import org.apache.commons.io.IOUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
 
@@ -46,7 +50,16 @@ public class MockIdentityProviderConfigurationFactory implements IdentityProvide
 
             @Override
             public char[] getIdPMetadataFile() {
-                return new char[0];
+
+                final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                try (InputStream in = MockIdentityProviderConfigurationFactory.class.getClassLoader()
+                        .getResourceAsStream("./TestIDPMetadata-dotcms.com.xml")) {
+
+                    IOUtils.copy(in, outputStream);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return outputStream.toString().toCharArray();
             }
 
             @Override

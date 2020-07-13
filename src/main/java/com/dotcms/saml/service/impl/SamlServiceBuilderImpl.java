@@ -48,6 +48,7 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
                 new DefaultMetaDescriptorServiceImpl(samlConfigurationService, messageObserver,
                         samlCoreService, credentialService, endpointService);
         InstanceUtil.putInstance(MetaDescriptorService.class, metaDescriptorService);
+        InstanceUtil.putInstance(SamlCoreService.class, samlCoreService);
         assertionResolverHandlerFactory.addAssertionResolverHandler(HttpPostAssertionResolverHandlerImpl.class.getName(),
                 new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
         messageObserver.updateInfo(this.getClass(), "Creating a new SamlAuthenticationService");

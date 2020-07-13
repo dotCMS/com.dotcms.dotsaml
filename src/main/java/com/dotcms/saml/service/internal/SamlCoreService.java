@@ -24,8 +24,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface SamlCoreService {
 
-    String SAML_SESSION_INDEX    = "SAMLSessionIndex";
-    String SAML_NAME_ID          = "SAMLNameID";
     String SINGLE_LOGOUT_REASON  = "urn:oasis:names:tc:SAML:2.0:logout:user";
 
     /**

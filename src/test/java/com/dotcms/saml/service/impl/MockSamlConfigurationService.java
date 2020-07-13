@@ -23,6 +23,10 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
                 return SamlConstants.DOT_SAML_IDP_METADATA_PROTOCOL_DEFAULT_VALUE;
             case DOTCMS_SAML_USE_ENCRYPTED_DESCRIPTOR:
                 return "false";
+            case DOTCMS_SAML_BINDING_TYPE:
+                return "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
+
+                //urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect -> https://test.dotcms.com/o/saml2/idp/logout?idpid=xxx
         }
         return null;
     }
