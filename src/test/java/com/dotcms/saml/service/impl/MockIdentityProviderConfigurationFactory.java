@@ -40,7 +40,7 @@ public class MockIdentityProviderConfigurationFactory implements IdentityProvide
 
             @Override
             public String getSpEndpointHostname() {
-                return "https://test.com";
+                return "test.com";
             }
 
             @Override

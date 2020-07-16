@@ -26,7 +26,12 @@ import java.util.Map;
 
 public class MockRequest implements HttpServletRequest {
 
+    private String requestURI;
     private final Map<String, String> parameterMap = new HashMap<>();
+
+    public void setRequestURI(final String requestURI) {
+        this.requestURI = requestURI;
+    }
 
     public void addParameters(final Map<String, String> parameterMap) {
 
@@ -115,7 +120,7 @@ public class MockRequest implements HttpServletRequest {
 
     @Override
     public String getRequestURI() {
-        return null;
+        return this.requestURI;
     }
 
     @Override
