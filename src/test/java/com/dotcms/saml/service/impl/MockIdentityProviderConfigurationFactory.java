@@ -86,6 +86,11 @@ public class MockIdentityProviderConfigurationFactory implements IdentityProvide
             public boolean containsOptionalProperty(String s) {
                 return false;
             }
+
+            @Override
+            public void destroy() {
+
+            }
         };
     }
 }

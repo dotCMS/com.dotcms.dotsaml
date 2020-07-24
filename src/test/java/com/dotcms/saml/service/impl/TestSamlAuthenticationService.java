@@ -2,17 +2,25 @@ package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlServiceBuilder;
-import com.dotcms.saml.utils.SamlUtils;
+import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.internal.runtime.JSONListAdapter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.util.XMLObjectChildrenList;
-import org.opensaml.saml.ext.saml2mdquery.impl.ActionNamespaceImpl;
 import org.opensaml.saml.saml2.core.Attribute;
 import org.opensaml.saml.saml2.core.NameID;
-import org.opensaml.saml.saml2.core.impl.NameIDImpl;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -136,4 +144,5 @@ public class TestSamlAuthenticationService {
         final List<String> nameIDValues = samlAuthenticationService.getValues(null);
         Assert.assertNull(nameIDValues);
     }
+
 }

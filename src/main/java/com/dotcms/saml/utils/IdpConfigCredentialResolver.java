@@ -55,22 +55,30 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 	/** {@inheritDoc} */
 	protected Iterable<Credential> resolveFromSource(final CriteriaSet criteriaSet) throws ResolverException {
 
-		this.checkCriteriaRequirements(criteriaSet);
-		final String entityID = criteriaSet.get(EntityIdCriterion.class).getEntityId();
-		final IdentityProviderConfiguration identityProviderConfiguration = getIdpConfig(entityID);
+		IdentityProviderConfiguration identityProviderConfiguration = null;
+		try {
 
-		final X509Certificate cert  = getPublicCert(identityProviderConfiguration.getPublicCert());
-		final PrivateKey privateKey = getPrivateKey(identityProviderConfiguration.getPrivateKey());
+			this.checkCriteriaRequirements(criteriaSet);
+			final String entityID = criteriaSet.get(EntityIdCriterion.class).getEntityId();
+			identityProviderConfiguration = getIdpConfig(entityID);
 
-		final BasicX509Credential credential = new BasicX509Credential(cert, privateKey);
-		credential.setEntityId(identityProviderConfiguration.getId());
-		credential.setUsageType(UsageType.UNSPECIFIED);
+			final X509Certificate cert = getPublicCert(identityProviderConfiguration.getPublicCert());
+			final PrivateKey privateKey = getPrivateKey(identityProviderConfiguration.getPrivateKey());
 
-		final ArrayList<X509Certificate> certChain = new ArrayList<>();
-		certChain.add(cert);
-		credential.setEntityCertificateChain(certChain);
+			final BasicX509Credential credential = new BasicX509Credential(cert, privateKey);
+			credential.setEntityId(identityProviderConfiguration.getId());
+			credential.setUsageType(UsageType.UNSPECIFIED);
 
-		return Collections.singleton(credential);
+			final ArrayList<X509Certificate> certChain = new ArrayList<>();
+			certChain.add(cert);
+			credential.setEntityCertificateChain(certChain);
+
+			return Collections.singleton(credential);
+		} finally {
+			if (null != identityProviderConfiguration) {
+				identityProviderConfiguration.destroy();
+			}
+		}
 	}
 
 	/**
