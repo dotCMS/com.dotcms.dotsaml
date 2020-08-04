@@ -67,6 +67,17 @@ public interface SamlCoreService {
                                    IdentityProviderConfiguration identityProviderConfiguration);
 
     /**
+     * Return the value of the /AuthnStatement@SessionIndex element in an
+     * assertion
+     *
+     * @return The value. <code>null</code>, if the assertion does not contain
+     *         the element.
+     */
+    AuthnRequest buildAuthnRequest(final HttpServletRequest request,
+                                          final IdentityProviderConfiguration identityProviderConfiguration,
+                                          final String protocolBinding);
+
+    /**
      * Gets from the destination sso url from the configuration.
      * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
      * @return String

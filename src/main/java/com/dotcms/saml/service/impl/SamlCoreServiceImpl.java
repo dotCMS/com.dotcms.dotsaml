@@ -13,6 +13,7 @@ import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotmarketing.util.Logger;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
@@ -59,6 +60,8 @@ import java.security.NoSuchProviderException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * This Service encapsulates all the Saml Stuff
@@ -202,13 +205,28 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 	/**
 	 * Build an authentication request.
+	 *
+	 * @return AuthnRequest
+	 */
+	@Override
+	public AuthnRequest buildAuthnRequest(final HttpServletRequest request, final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		return buildAuthnRequest(request, identityProviderConfiguration,
+				this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_PROTOCOL_BINDING));
+	}
+
+
+	/**
+	 * Build an authentication request.
 	 * @param request {@link HttpServletRequest}
 	 * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
+	 * @param protocolBinding {@link String}
 	 * @return AuthnRequest
 	 */
 	@Override
 	public AuthnRequest buildAuthnRequest(final HttpServletRequest request,
-										  final IdentityProviderConfiguration identityProviderConfiguration) {
+										  final IdentityProviderConfiguration identityProviderConfiguration,
+										  final String protocolBinding) {
 
 		final String ipDSSODestination  = this.getIPDSSODestination(identityProviderConfiguration);
 
@@ -230,8 +248,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 		// Get the protocol from the user, or use a default one:
 		// SAMLConstants.SAML2_ARTIFACT_BINDING_URI
-		authnRequest.setProtocolBinding(
-				this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_PROTOCOL_BINDING));
+		authnRequest.setProtocolBinding(protocolBinding);
 
 		// this is the address that receives the SAML Assertion, after a
 		// successful authentication on the IdP.

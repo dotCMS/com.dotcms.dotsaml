@@ -12,6 +12,8 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.external.SamlUnauthorizedException;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
+import com.dotcms.saml.service.handler.AuthenticationHandler;
+import com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
@@ -29,7 +31,6 @@ import org.opensaml.saml.saml2.binding.encoding.impl.HTTPRedirectDeflateEncoder;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Attribute;
 import org.opensaml.saml.saml2.core.AttributeStatement;
-import org.opensaml.saml.saml2.core.AuthnRequest;
 import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.NameID;
@@ -53,6 +54,7 @@ import java.util.Map;
  */
 public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationService {
 
+    private final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory;
     private final AssertionResolverHandlerFactory assertionResolverHandlerFactory;
     private final SamlCoreService                 samlCoreService;
     private final SamlConfigurationService        samlConfigurationService;
@@ -61,13 +63,15 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     private final MetaDataXMLPrinter              metaDataXMLPrinter;
     private final Initializer                     initializer;
 
-    public OpenSamlAuthenticationServiceImpl(final AssertionResolverHandlerFactory assertionResolverHandlerFactory,
+    public OpenSamlAuthenticationServiceImpl(final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory,
+                                             final AssertionResolverHandlerFactory assertionResolverHandlerFactory,
                                              final SamlCoreService samlCoreService,
                                              final SamlConfigurationService samlConfigurationService,
                                              final MessageObserver messageObserver,
                                              final MetaDescriptorService metaDescriptorService,
                                              final Initializer initializer) {
 
+        this.authenticationResolverHandlerFactory = authenticationResolverHandlerFactory;
         this.assertionResolverHandlerFactory = assertionResolverHandlerFactory;
         this.samlCoreService          = samlCoreService;
         this.samlConfigurationService = samlConfigurationService;
@@ -106,21 +110,11 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                                final HttpServletResponse response,
                                final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final MessageContext context    = new MessageContext(); // main context
-        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration);
 
-        context.setMessage(authnRequest);
+        final AuthenticationHandler authenticationHandler =
+                this.authenticationResolverHandlerFactory.getAuthenticationHandlerForSite(identityProviderConfiguration);
 
-        // peer entity (Idp to SP and viceversa)
-        final SAMLPeerEntityContext peerEntityContext = context.getSubcontext(SAMLPeerEntityContext.class, true);
-        // info about the endpoint of the peer entity
-        final SAMLEndpointContext endpointContext     = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
-
-        endpointContext.setEndpoint(
-                this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
-
-        this.setSignatureSigningParams(context, identityProviderConfiguration);
-        this.doRedirect(context, response, authnRequest, identityProviderConfiguration);
+        authenticationHandler.handle(request, response, identityProviderConfiguration);
     }
 
     @Override
@@ -145,6 +139,52 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         this.setSignatureSigningParams(context, identityProviderConfiguration);
         this.doRedirect(context, response, logoutRequest, identityProviderConfiguration);
+    }
+
+    @SuppressWarnings("rawtypes")
+    protected void setSignatureSigningParams(final MessageContext context,
+                                             final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
+
+        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(identityProviderConfiguration));
+        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
+
+        context.getSubcontext(SecurityParametersContext.class, true)
+                .setSignatureSigningParameters(signatureSigningParameters);
+    }
+
+    // this makes the redirect to the IdP
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected void doRedirect(final MessageContext context, final HttpServletResponse response,
+                              final XMLObject xmlObject,
+                              final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final boolean clearQueryParams = samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
+                SamlName.DOTCMS_SAML_CLEAR_LOCATION_QUERY_PARAMS);
+
+        try {
+
+            final HTTPRedirectDeflateEncoder encoder = new DotHTTPRedirectDeflateEncoder(
+                    clearQueryParams, this.messageObserver);
+
+            encoder.setMessageContext(context);
+            encoder.setHttpServletResponse(response);
+
+            encoder.initialize();
+
+            this.messageObserver.updateDebug(this.getClass(), "Printing XMLObject:");
+            this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
+            this.messageObserver.updateDebug(this.getClass(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
+
+            encoder.encode();
+        } catch (ComponentInitializationException | MessageEncodingException e) {
+
+            final String errorMsg = "An error occurred when executing redirect to IdP '" +
+                    identityProviderConfiguration.getIdpName() + "': " + e.getMessage();
+            this.messageObserver.updateError(this.getClass(), errorMsg, e);
+            throw new SamlException(errorMsg, e);
+        }
     }
 
     @Override
@@ -182,51 +222,6 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return assertionResolverHandler.resolveAssertion(request, response, identityProviderConfiguration);
     }
 
-    @SuppressWarnings("rawtypes")
-    protected void setSignatureSigningParams(final MessageContext context,
-                                           final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
-
-        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(identityProviderConfiguration));
-        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-
-        context.getSubcontext(SecurityParametersContext.class, true)
-                .setSignatureSigningParameters(signatureSigningParameters);
-    }
-
-    // this makes the redirect to the IdP
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected void doRedirect(final MessageContext context, final HttpServletResponse response,
-                            final XMLObject xmlObject,
-                            final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        final boolean clearQueryParams = samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
-                SamlName.DOTCMS_SAML_CLEAR_LOCATION_QUERY_PARAMS);
-
-        try {
-
-            final HTTPRedirectDeflateEncoder encoder = new DotHTTPRedirectDeflateEncoder(
-                    clearQueryParams, this.messageObserver);
-
-            encoder.setMessageContext(context);
-            encoder.setHttpServletResponse(response);
-
-            encoder.initialize();
-
-            this.messageObserver.updateDebug(this.getClass(), "Printing XMLObject:");
-            this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
-            this.messageObserver.updateDebug(this.getClass(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
-
-            encoder.encode();
-        } catch (ComponentInitializationException | MessageEncodingException e) {
-
-            final String errorMsg = "An error occurred when executing redirect to IdP '" +
-                    identityProviderConfiguration.getIdpName() + "': " + e.getMessage();
-            this.messageObserver.updateError(this.getClass(), errorMsg, e);
-            throw new SamlException(errorMsg, e);
-        }
-    }
 
     /**
      * Return the value of the /AuthnStatement@SessionIndex element in an

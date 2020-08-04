@@ -6,6 +6,7 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
+import com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory;
 import com.dotcms.saml.service.handler.HttpPostAssertionResolverHandlerImpl;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
@@ -15,6 +16,7 @@ import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.InstanceUtil;
+import org.apache.velocity.app.VelocityEngine;
 
 import java.util.Collections;
 
@@ -30,6 +32,7 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
 
     @Override
     public SamlAuthenticationService buildAuthenticationService(final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
+                                                                final VelocityEngine           velocityEngine,
                                                                 final MessageObserver messageObserver,
                                                                 final SamlConfigurationService samlConfigurationService) {
 
@@ -51,9 +54,11 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
         InstanceUtil.putInstance(SamlCoreService.class, samlCoreService);
         assertionResolverHandlerFactory.addAssertionResolverHandler(HttpPostAssertionResolverHandlerImpl.class.getName(),
                 new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
+        final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory =
+                new AuthenticationResolverHandlerFactory(samlConfigurationService, samlCoreService, velocityEngine, messageObserver);
         messageObserver.updateInfo(this.getClass(), "Creating a new SamlAuthenticationService");
 
-        return new OpenSamlAuthenticationServiceImpl(assertionResolverHandlerFactory, samlCoreService,
+        return new OpenSamlAuthenticationServiceImpl(authenticationResolverHandlerFactory, assertionResolverHandlerFactory, samlCoreService,
                 samlConfigurationService, messageObserver, metaDescriptorService, this.initializer);
     }
 

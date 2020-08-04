@@ -85,6 +85,7 @@ jar {
                         lib/commons-codec-1.10.jar;lib:=true,
                         lib/joda-time-2.9.jar;lib:=true,
                         lib/commons-lang-2.4.jar;lib:=true,
+                        lib/cryptacular-1.1.1.jar;lib:=true,
                         lib/guava-20.0.jar;lib:=true,
                         lib/java-support-7.3.0.jar;lib:=true,
                         lib/metrics-core-4.0.0.jar;lib:=true,     
