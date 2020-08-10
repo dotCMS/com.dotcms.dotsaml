@@ -373,6 +373,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         attrBuilder.nameID(originalAttributes.getNameID());
         attrBuilder.roles(originalAttributes.getRoles());
         attrBuilder.addRoles(originalAttributes.isAddRoles());
+        attrBuilder.sessionIndex(originalAttributes.getSessionIndex());
 
         if (StringUtils.isBlank((originalAttributes.getEmail()))) {
 
