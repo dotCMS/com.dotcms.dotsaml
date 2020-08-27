@@ -86,9 +86,9 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
 
             encoder.initialize();
 
-            this.messageObserver.updateDebug(this.getClass(), "Printing XMLObject:");
-            this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
-            this.messageObserver.updateDebug(this.getClass(), "Posting to IdP '" + idpConfig.getIdpName() + "'");
+            this.messageObserver.updateDebug(this.getClass().getName(), "Printing XMLObject:");
+            this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
+            this.messageObserver.updateDebug(this.getClass().getName(), "Posting to IdP '" + idpConfig.getIdpName() + "'");
 
 
             encoder.encode();
@@ -96,7 +96,7 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
 
             final String errorMsg = "An error occurred when executing Posting to IdP '" +
                     idpConfig.getIdpName() + "': " + e.getMessage();
-            this.messageObserver.updateError(this.getClass(), errorMsg, e);
+            this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
             throw new SamlException(errorMsg, e);
         }
     }

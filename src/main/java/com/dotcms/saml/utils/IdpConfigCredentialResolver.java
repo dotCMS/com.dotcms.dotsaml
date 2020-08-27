@@ -91,7 +91,7 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 
 		if (criteriaSet == null || criteriaSet.get(EntityIdCriterion.class) == null) {
 
-			this.messageObserver.updateError(this.getClass(),
+			this.messageObserver.updateError(this.getClass().getName(),
 					"EntityIDCriterion was not specified in the criteria set, resolution cannot be attempted");
 			throw new IllegalArgumentException("No EntityIDCriterion was available in criteria set");
 		}
@@ -106,14 +106,14 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 			identityProviderConfiguration = identityProviderConfigurationFactory.findIdentityProviderConfigurationById(id);
 		} catch (final Exception e) {
 
-			this.messageObserver.updateError(this.getClass(), "Exception while reading IdpConfig data for ID: {0}", id);
+			this.messageObserver.updateError(this.getClass().getName(), "Exception while reading IdpConfig data for ID: {0}", id);
 			throw new ResolverException("Exception while reading IdpConfig data", e);
 
 		}
 
 		if (identityProviderConfiguration == null) {
 
-			this.messageObserver.updateError(this.getClass(), "Unable to located IdpConfig file with ID: {0}", id);
+			this.messageObserver.updateError(this.getClass().getName(), "Unable to located IdpConfig file with ID: {0}", id);
 			throw new ResolverException("Unable to located IdpConfig file with ID:");
 		}
 
@@ -125,7 +125,7 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		X509Certificate cert = null;
 
 		if (certFile == null || certFile.length == 0) {
-			this.messageObserver.updateError(this.getClass(), "Public Key cannot be null!");
+			this.messageObserver.updateError(this.getClass().getName(), "Public Key cannot be null!");
 			throw new ResolverException("Public Key file cannot be null!");
 		}
 
@@ -135,18 +135,18 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 			cert = (X509Certificate) certificateFactory.generateCertificate(inputStream);
 		} catch (IOException e) {
 
-			this.messageObserver.updateError(this.getClass(), "Unable to read Public Key File");
+			this.messageObserver.updateError(this.getClass().getName(), "Unable to read Public Key File");
 			throw new ResolverException("Unable to read Public Key File", e);
 		} catch (CertificateException e) {
 
-			this.messageObserver.updateError(this.getClass(), "Certificate Error reading Public Key File");
+			this.messageObserver.updateError(this.getClass().getName(), "Certificate Error reading Public Key File");
 			throw new ResolverException("Certificate Error reading Public Key File", e);
 
 		}
 
 		if (cert == null) {
 
-			this.messageObserver.updateError(this.getClass(), "Public certificate cannot be null!");
+			this.messageObserver.updateError(this.getClass().getName(), "Public certificate cannot be null!");
 			throw new ResolverException("Public certificate cannot be null!");
 		}
 
@@ -159,7 +159,7 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 
 		if (keyFile == null || keyFile.length == 0) {
 
-			this.messageObserver.updateError(this.getClass(),"Private Key cannot be null!");
+			this.messageObserver.updateError(this.getClass().getName(),"Private Key cannot be null!");
 			throw new ResolverException("Private Key file cannot be null!");
 		}
 
@@ -174,18 +174,18 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 			privateKey = keyFactory.generatePrivate(keySpecPKCS8);
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 
-			this.messageObserver.updateError(this.getClass(),"Unable to translate Private Key");
+			this.messageObserver.updateError(this.getClass().getName(),"Unable to translate Private Key");
 			throw new ResolverException("Unable to translate Private Key", e);
 		}  catch (Exception e) {
 
-			this.messageObserver.updateError(this.getClass(),"Unable to read Private Key File");
+			this.messageObserver.updateError(this.getClass().getName(),"Unable to read Private Key File");
 			throw new ResolverException("Unable to read Private Key File", e);
 
 		}
 
 		if (privateKey == null) {
 
-			this.messageObserver.updateError(this.getClass(),"Private certificate cannot be null!");
+			this.messageObserver.updateError(this.getClass().getName(),"Private certificate cannot be null!");
 			throw new ResolverException("Private certificate cannot be null!");
 		}
 

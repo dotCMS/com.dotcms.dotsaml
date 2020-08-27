@@ -94,16 +94,16 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
 
             encoder.initialize();
 
-            this.messageObserver.updateDebug(this.getClass(), "Printing XMLObject:");
-            this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
-            this.messageObserver.updateDebug(this.getClass(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
+            this.messageObserver.updateDebug(this.getClass().getName(), "Printing XMLObject:");
+            this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
+            this.messageObserver.updateDebug(this.getClass().getName(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
 
             encoder.encode();
         } catch (ComponentInitializationException | MessageEncodingException e) {
 
             final String errorMsg = "An error occurred when executing redirect to IdP '" +
                     identityProviderConfiguration.getIdpName() + "': " + e.getMessage();
-            this.messageObserver.updateError(this.getClass(), errorMsg, e);
+            this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
             throw new SamlException(errorMsg, e);
         }
     }

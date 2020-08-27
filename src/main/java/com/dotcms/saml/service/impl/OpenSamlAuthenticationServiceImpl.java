@@ -86,11 +86,11 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (!this.initializer.isInitializationDone()) {
 
-            this.messageObserver.updateInfo(this.getClass(), "InitService now...");
+            this.messageObserver.updateInfo(this.getClass().getName(), "InitService now...");
             this.initializer.init(context);
         } else {
 
-            this.messageObserver.updateInfo(this.getClass(), "Saml Services were already started.");
+            this.messageObserver.updateInfo(this.getClass().getName(), "Saml Services were already started.");
         }
     }
 
@@ -173,16 +173,16 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
             encoder.initialize();
 
-            this.messageObserver.updateDebug(this.getClass(), "Printing XMLObject:");
-            this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
-            this.messageObserver.updateDebug(this.getClass(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
+            this.messageObserver.updateDebug(this.getClass().getName(), "Printing XMLObject:");
+            this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
+            this.messageObserver.updateDebug(this.getClass().getName(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
 
             encoder.encode();
         } catch (ComponentInitializationException | MessageEncodingException e) {
 
             final String errorMsg = "An error occurred when executing redirect to IdP '" +
                     identityProviderConfiguration.getIdpName() + "': " + e.getMessage();
-            this.messageObserver.updateError(this.getClass(), errorMsg, e);
+            this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
             throw new SamlException(errorMsg, e);
         }
     }
@@ -198,15 +198,15 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             final Assertion assertion = this.resolveAssertion(request, response, identityProviderConfiguration);
             attributes                = this.retrieveAttributes(assertion, identityProviderConfiguration);
 
-            this.messageObserver.updateDebug(this.getClass(), "Validating user - " + attributes);
+            this.messageObserver.updateDebug(this.getClass().getName(), "Validating user - " + attributes);
 
         } catch (AttributesNotFoundException e) {
 
-            this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
+            this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
         } catch (Exception e) {
 
             final String nameID = null != attributes? NameID.class.cast(attributes.getNameID()).getValue(): StringUtils.EMPTY ;
-            this.messageObserver.updateError(this.getClass(),
+            this.messageObserver.updateError(this.getClass().getName(),
                     "An error occurred when loading user with ID '" + nameID+ "'", e);
         }
 
@@ -272,24 +272,24 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         final String nameId = assertion.getSubject().getNameID().getValue();
 
-        this.messageObserver.updateDebug(this.getClass(),
+        this.messageObserver.updateDebug(this.getClass().getName(),
                 "Resolving attributes - Name ID : " + assertion.getSubject().getNameID().getValue());
 
         attrBuilder.nameID(assertion.getSubject().getNameID());
 
-        this.messageObserver.updateDebug(this.getClass(),
+        this.messageObserver.updateDebug(this.getClass().getName(),
                 "Elements of type AttributeStatement in assertion : " + assertion.getAttributeStatements().size());
 
         assertion.getAttributeStatements().forEach(attributeStatement -> {
 
-            this.messageObserver.updateDebug(this.getClass(),
+            this.messageObserver.updateDebug(this.getClass().getName(),
                     "Attribute Statement - local name: " + AttributeStatement.DEFAULT_ELEMENT_LOCAL_NAME + ", type: "
                             + AttributeStatement.TYPE_LOCAL_NAME + ", number of attributes: "
                             + attributeStatement.getAttributes().size());
 
             attributeStatement.getAttributes().forEach(attribute -> {
 
-                this.messageObserver.updateDebug(this.getClass(),
+                this.messageObserver.updateDebug(this.getClass().getName(),
                         "Attribute - friendly name: " + attribute.getFriendlyName() + ", name: " + attribute.getName()
                                 + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
                                 + attribute.getAttributeValues().size());
@@ -301,7 +301,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                 } else if ((attribute.getName() != null && attribute.getName().equals(lastNameField))
                         || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(lastNameField))) {
 
-                    this.messageObserver.updateDebug(this.getClass(),
+                    this.messageObserver.updateDebug(this.getClass().getName(),
                             "Resolving attribute - LastName : " + lastNameField);
 
                     final String lastName = StringUtils.isNotBlank(
@@ -312,13 +312,13 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
                     attrBuilder.lastName(lastName);
 
-                    this.messageObserver.updateDebug(this.getClass(),
+                    this.messageObserver.updateDebug(this.getClass().getName(),
                             "Resolved attribute - lastName : " + attrBuilder.getLastName());
                 } else if ((attribute.getName() != null && attribute.getName().equals(firstNameField))
                         || (attribute.getFriendlyName() != null
                         && attribute.getFriendlyName().equals(firstNameField))) {
 
-                    this.messageObserver.updateDebug(this.getClass(),
+                    this.messageObserver.updateDebug(this.getClass().getName(),
                             "Resolving attribute - firstName : " + firstNameField);
 
                     final String firstName = StringUtils.isNotBlank(
@@ -329,18 +329,18 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
                     attrBuilder.firstName(firstName);
 
-                    this.messageObserver.updateDebug(this.getClass(),
+                    this.messageObserver.updateDebug(this.getClass().getName(),
                             "Resolved attribute - firstName : " + attrBuilder.getFirstName());
                 } else if ((attribute.getName() != null && attribute.getName().equals(rolesField))
                         || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(rolesField))) {
 
-                    this.messageObserver.updateDebug(this.getClass(), "Resolving attribute - roles : " + rolesField);
+                    this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attribute - roles : " + rolesField);
                     attrBuilder.addRoles(true).roles(attribute);
-                    this.messageObserver.updateDebug(this.getClass(), "Resolving attributes - roles : " + attribute);
+                    this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attributes - roles : " + attribute);
                 } else {
 
                     final String attributeName = attribute.getName();
-                    this.messageObserver.updateWarning(this.getClass(),
+                    this.messageObserver.updateWarning(this.getClass().getName(),
                             attributeName + " attribute did not match any user property in the idpConfig: " + customConfiguration);
                 }
             });
@@ -349,10 +349,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         attrBuilder.sessionIndex(this.getSessionIndex(assertion));
 
         Attributes attributes = attrBuilder.build();
-        this.messageObserver.updateDebug(this.getClass(), "-> Value of attributesBean = " + attributes.toString());
+        this.messageObserver.updateDebug(this.getClass().getName(), "-> Value of attributesBean = " + attributes.toString());
         attributes = this.doubleCheckAttributes(attributes, firstNameField, firstNameForNullValue, lastNameField,
                 lastNameForNullValue, allowNullEmail);
-        this.messageObserver.updateDebug(this.getClass(), "-> Double Checked attributes = " + attributes);
+        this.messageObserver.updateDebug(this.getClass().getName(), "-> Double Checked attributes = " + attributes);
 
         return attributes;
     }
@@ -420,7 +420,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             throw new SamlUnauthorizedException(exceptionMessage);
         }
 
-        this.messageObserver.updateInfo(this.getClass(), logMessage);
+        this.messageObserver.updateInfo(this.getClass().getName(), logMessage);
 
         return lastNameForNullValue;
     }
@@ -428,7 +428,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     protected void resolveEmail(final String emailField, final Attributes.Builder attributesBuilder,
                               final Attribute attribute, final String nameId, final boolean allowNullEmail) {
 
-        this.messageObserver.updateDebug(this.getClass(), "Resolving attribute - Email : " + emailField);
+        this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attribute - Email : " + emailField);
 
         String emailValue = attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue();
 
@@ -436,7 +436,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         attributesBuilder.email(emailValue);
 
-        this.messageObserver.updateDebug(this.getClass(),  "Resolved attribute - Email : " + attributesBuilder.getEmail());
+        this.messageObserver.updateDebug(this.getClass().getName(),  "Resolved attribute - Email : " + attributesBuilder.getEmail());
     }
 
     protected String createNoReplyEmail(final String nameId, final boolean allowNullEmail) {
@@ -446,13 +446,13 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             throw new NotNullEmailAllowedException("Email attribute is null, which is not allowed");
         }
 
-        this.messageObserver.updateInfo(this.getClass(),
+        this.messageObserver.updateInfo(this.getClass().getName(),
                 "UserID '" + nameId + "' has a null email attribute. Generating one...");
 
         final String emailValue = new StringBuilder(NO_REPLY).append(sanitizeNameId(nameId)).append(NO_REPLY_DOTCMS_COM)
                 .toString();
 
-        this.messageObserver.updateDebug(this.getClass(),
+        this.messageObserver.updateDebug(this.getClass().getName(),
                 "UserID '" + nameId + "' has been assigned email '" + emailValue + "'");
 
         return emailValue;
@@ -496,15 +496,15 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             final EntityDescriptor descriptor = this.metaDescriptorService.
                     getServiceProviderEntityDescriptor(identityProviderConfiguration);
 
-            this.messageObserver.updateDebug(this.getClass(), "Printing Metadata Descriptor:");
-            this.messageObserver.updateDebug(this.getClass(), "\n\n" + descriptor);
+            this.messageObserver.updateDebug(this.getClass().getName(), "Printing Metadata Descriptor:");
+            this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + descriptor);
             // get ready to convert it to XML.
             this.metaDataXMLPrinter.print(descriptor, writer);
 
-            this.messageObserver.updateDebug(this.getClass(),"Metadata Descriptor printed.");
+            this.messageObserver.updateDebug(this.getClass().getName(),"Metadata Descriptor printed.");
         } catch (ParserConfigurationException | TransformerException | MarshallingException e) {
 
-            this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
+            this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
             throw new SamlException(e.getMessage(), e);
         }
     }

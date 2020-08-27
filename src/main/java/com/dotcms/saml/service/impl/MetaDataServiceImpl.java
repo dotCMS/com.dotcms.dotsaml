@@ -54,7 +54,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 			metadataBean = descriptorParser.parse(inputStream, identityProviderConfiguration);
 		} catch (Exception exception) {
 
-			this.messageObserver.updateError(MetaDataServiceImpl.class, exception.getMessage(), exception);
+			this.messageObserver.updateError(MetaDataServiceImpl.class.getName(), exception.getMessage(), exception);
 		}
 
 		return metadataBean;

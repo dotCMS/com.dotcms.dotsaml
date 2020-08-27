@@ -117,7 +117,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			defaultElementName = (QName) clazz.getDeclaredField(DEFAULT_ELEMENT_NAME).get(null);
 			object = (T) builderFactory.getBuilder(defaultElementName).buildObject(defaultElementName);
 		} catch (IllegalAccessException | NoSuchFieldException e) {
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, e.getMessage(), e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
 			throw new IllegalArgumentException("Could not create SAML object: " + clazz);
 		}
 
@@ -143,7 +143,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		// IDP logout url
 		if (!StringUtils.isNotBlank(idpSingleLogoutDestionation)) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class,
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(),
 					"The idpSingleLogoutDestination is not set in the IdP metadata or the configuration files");
 			throw new SamlException("The property: "
 					+ SamlName.DOTCMS_SAML_IDENTITY_PROVIDER_DESTINATION_SLO_URL.getPropertyName()
@@ -152,14 +152,14 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 		if (null == nameID || StringUtils.isBlank(sessionIndexValue)) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, "The nameID or sessionIndex are null");
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The nameID or sessionIndex are null");
 			throw new SamlException("The nameID or sessionIndex are null");
 		}
 
 		logoutRequest.setIssueInstant(new DateTime());
 		logoutRequest.setID(SamlUtils.generateSecureRandomId());
 
-		this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+		this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 				"Creating the logout request for NameID: " + nameID + ", SessionIndex: " + sessionIndexValue);
 
 		// id for the sender
@@ -233,7 +233,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		// IDP url
 		if (StringUtils.isBlank(ipDSSODestination)) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class,
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(),
 					"The ipDSSODestination is not set in the idp metadata, neither the configuration files");
 			throw new SamlException("The property: "
 					+ SamlName.DOTCMS_SAML_IDENTITY_PROVIDER_DESTINATION_SSO_URL.getPropertyName()
@@ -562,7 +562,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			assertion = decrypter.decrypt(encryptedAssertion);
 		} catch (DecryptionException e) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, e.getMessage(), e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
 			throw new SamlException(e.getMessage(), e);
 		}
 
@@ -580,42 +580,42 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				return;
 			} catch (SignatureException ignore) {
 
-				this.messageObserver.updateInfo(SamlCoreServiceImpl.class, "Signature Validation failed with provided credential (ignore?): " +
+				this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Signature Validation failed with provided credential (ignore?): " +
 						ignore.getMessage());
 			}
 		}
 
-		this.messageObserver.updateInfo(SamlCoreServiceImpl.class, "Couldn't find any valid credential to validate the assertion signature");
+		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Couldn't find any valid credential to validate the assertion signature");
 		throw new SignatureException("Assertion Signature cannot be validated");
 	}
 
 	private void validateSignature(final Response response, final Collection<Credential> credentials)
 			throws SignatureException {
 
-		this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+		this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 				"Validating Signature - Credentials " + ((credentials != null) ? "are present" : "are null"));
-		this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+		this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 				"Validating Signature - Credentials " + ((response != null) ? "are present" : "are null"));
 
 		for (final Credential credential : credentials) {
 
 			try {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validating Signature - Credential " +
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating Signature - Credential " +
 						((credential != null) ? "is present" : "is null"));
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validating Signature - response.getSignature " +
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating Signature - response.getSignature " +
 						((response.getSignature() != null)?"is present" : "is null"));
 
 				SignatureValidator.validate(response.getSignature(), credential);
 				return;
 			} catch (SignatureException ignore) {
 
-				this.messageObserver.updateInfo(SamlCoreServiceImpl.class,
+				this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
 						"Signature Validation failed with provided credential(s): " + ignore.getMessage());
 			}
 		}
 
-		this.messageObserver.updateInfo(SamlCoreServiceImpl.class, "Couldn't find any valid credential to validate the response signature");
+		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Couldn't find any valid credential to validate the response signature");
 		throw new SignatureException("Response Signature cannot be validated");
 	}
 
@@ -631,7 +631,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 		if (this.credentialService.isVerifyAssertionSignatureNeeded(identityProviderConfiguration) != assertion.isSigned()) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, "Assertion Signatures for IdP '" +
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "Assertion Signatures for IdP '" +
 					identityProviderConfiguration.getIdpName() + "' do not match.");
 			throw new SamlException("The SAML Assertion for IdP '" +
 					identityProviderConfiguration.getIdpName() + "' does not match");
@@ -640,7 +640,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		// If unsigned, No need to go further.
 		if (!this.credentialService.isVerifyAssertionSignatureNeeded(identityProviderConfiguration)) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, "The verification assertion signature and status code for IdP '" +
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The verification assertion signature and status code for IdP '" +
 					identityProviderConfiguration.getIdpName() + "' was skipped.");
 			return; // Exit
 		}
@@ -650,14 +650,14 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Executing Profile Validation...");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
 
 				new SAMLSignatureProfileValidator().validate(assertion.getSignature());
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Profile Validation finished");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Profile Validation finished");
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Skipping the Verify Signature Profile check");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
 			}
 
 			// Ask on the config if the app wants signature validator
@@ -665,30 +665,30 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 				if (null != this.metaDataService.getSigningCredentials(identityProviderConfiguration)) {
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 							"Validating the signatures: " + this.metaDataService.getSigningCredentials(identityProviderConfiguration));
 
 					this.validateSignature(assertion, this.metaDataService.getSigningCredentials(identityProviderConfiguration));
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Executing signatures validation...");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing signatures validation...");
 				} else {
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validating the signature with a IdP Credentials...");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
 
 					SignatureValidator.validate(assertion.getSignature(), getIdPCredentials(identityProviderConfiguration));
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validation of the signature with a IdP Credentials finished");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
 				}
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Skipping the Verify Signature Profile check");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
 			}
 
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "SAML Assertion signature verified");
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "SAML Assertion signature verified");
 
 		} catch (SignatureException e) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, e.getMessage(), e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
 			throw new SamlException(e.getMessage(), e);
 		}
 	}
@@ -705,14 +705,14 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		// The check signature in dotCMS and IdP must match
 		if (this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration) != response.isSigned()) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, "The response signatures for IdP '" + identityProviderConfiguration.getIdpName() + "' do not match.");
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The response signatures for IdP '" + identityProviderConfiguration.getIdpName() + "' do not match.");
 			throw new SamlException("The SAML Response for IdP '" + identityProviderConfiguration.getIdpName() + "' does not match");
 		}
 
 		// If unsigned, No need to go further.
 		if (!this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration)) {
 
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "The verification response signature and status code for IdP '" +
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "The verification response signature and status code for IdP '" +
 					identityProviderConfiguration.getIdpName() + "' was skipped.");
 			return; // Exit
 		}
@@ -721,14 +721,14 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		try {
 			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Executing Profile Validation...");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
 
 				new SAMLSignatureProfileValidator().validate(response.getSignature());
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Profile Validation finished");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Profile Validation finished");
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Skipping verification of Signature Profile");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping verification of Signature Profile");
 			}
 
 			// Ask on the config if the app wants signature validator
@@ -736,30 +736,30 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 				if (null != this.metaDataService.getSigningCredentials(identityProviderConfiguration)) {
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 							"Validating the signatures: " + this.metaDataService.getSigningCredentials(identityProviderConfiguration));
 
 					this.validateSignature(response, this.metaDataService.getSigningCredentials(identityProviderConfiguration));
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Executing signature validation...");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing signature validation...");
 				} else {
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validating the signature with a IdP Credentials...");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
 
 					SignatureValidator.validate(response.getSignature(), this.getIdPCredentials(identityProviderConfiguration));
 
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Validation of the signature with a IdP Credentials finished");
+					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
 				}
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Skipping the Verify Signature Profile check");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
 			}
 
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "SAML Response signature verified");
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "SAML Response signature verified");
 
 		} catch (SignatureException e) {
 
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, e.getMessage(), e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
 			throw new SamlException(e.getMessage(), e);
 		}
 	}
@@ -785,7 +785,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				credential = customCredentialProvider.createCredential();
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 						"Creating credentials for IdP: " + identityProviderConfiguration.getIdpName());
 
 				final IdpConfigCredentialResolver resolver = new IdpConfigCredentialResolver(
@@ -797,13 +797,13 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				criteriaSet.add(criterion);
 				credential = resolver.resolveSingle(criteriaSet);
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class,
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
 						"Credentials have been created: " + credential);
 			}
 		} catch (ResolverException e) {
 
 			final String errorMsg ="An error occurred when reading credentials: " + e.getMessage();
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, errorMsg, e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), errorMsg, e);
 			throw new SamlException(errorMsg, e);
 		}
 
@@ -828,7 +828,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				credentialMap.put(identityProviderConfiguration.getSpEndpointHostname(), credential);
 			} else {
 
-				this.messageObserver.updateError(SamlCoreServiceImpl.class,
+				this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(),
 						"Credential is null for site: " + identityProviderConfiguration.getSpEndpointHostname());
 
 				throw new SamlException("Credential is null for site: " + identityProviderConfiguration.getSpEndpointHostname());
@@ -847,16 +847,16 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 		try {
 
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Creating credential for IdP '" +
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Creating credential for IdP '" +
 					identityProviderConfiguration.getIdpName() + "'");
 
 			if (null != customCredentialProvider) {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Using custom credential provider");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Using custom credential provider");
 				idpCredential = customCredentialProvider.createCredential();
 			} else {
 
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class, "Using standard credential algorithm");
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Using standard credential algorithm");
 				// this fallback generates just a random keypair not very useful
 				// to validate the signature.
 				keyPair       = KeySupport.generateKeyPair("RSA", 1024, null);
@@ -866,7 +866,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 			final String errorMsg = "An error occurred when generating credential for IdP '" + identityProviderConfiguration.getIdpName() +
 					"': " + e.getMessage();
-			this.messageObserver.updateError(SamlCoreServiceImpl.class, errorMsg, e);
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), errorMsg, e);
 			throw new SamlException(errorMsg, e);
 		}
 

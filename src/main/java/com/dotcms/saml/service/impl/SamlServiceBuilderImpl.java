@@ -56,7 +56,7 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
                 new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
         final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory =
                 new AuthenticationResolverHandlerFactory(samlConfigurationService, samlCoreService, velocityEngine, messageObserver);
-        messageObserver.updateInfo(this.getClass(), "Creating a new SamlAuthenticationService");
+        messageObserver.updateInfo(this.getClass().getName(), "Creating a new SamlAuthenticationService");
 
         return new OpenSamlAuthenticationServiceImpl(authenticationResolverHandlerFactory, assertionResolverHandlerFactory, samlCoreService,
                 samlConfigurationService, messageObserver, metaDescriptorService, this.initializer);

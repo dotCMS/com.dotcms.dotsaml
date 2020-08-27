@@ -106,7 +106,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 				SamlName.DOT_SAML_IDP_METADATA_PROTOCOL);
 		final IDPSSODescriptor idpDescriptor = descriptor.getIDPSSODescriptor(protocol);
 
-		this.messageObserver.updateInfo(this.getClass(), "Parsing metadata from IdP with entityID: " + descriptor.getEntityID());
+		this.messageObserver.updateInfo(this.getClass().getName(), "Parsing metadata from IdP with entityID: " + descriptor.getEntityID());
 
 		return new MetaData(descriptor.getEntityID(), idpDescriptor.getErrorURL(),
 				this.getSingleSignOnMap(idpDescriptor), this.getSingleLogoutMap(idpDescriptor),
@@ -119,7 +119,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 
 		idpDescriptor.getSingleLogoutServices().stream().forEach(sso -> {
 
-			this.messageObserver.updateInfo(this.getClass(), "Add SLO binding " + sso.getBinding() + " (" + sso.getLocation() + ")");
+			this.messageObserver.updateInfo(this.getClass().getName(), "Add SLO binding " + sso.getBinding() + " (" + sso.getLocation() + ")");
 			singleLogoutBindingLocationMap.put(sso.getBinding(), sso.getLocation());
 		});
 
@@ -163,9 +163,9 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 
 		descriptor.setEntityID(this.samlService.getSPIssuerValue(identityProviderConfiguration));
 
-		this.messageObserver.updateInfo(this.getClass(),
+		this.messageObserver.updateInfo(this.getClass().getName(),
 				"Creating the MetaData for the site: " + identityProviderConfiguration.getSpEndpointHostname());
-		this.messageObserver.updateDebug(this.getClass(),
+		this.messageObserver.updateDebug(this.getClass().getName(),
 				"Generating the Entity Provider Descriptor for: " + descriptor.getEntityID());
 
 		spssoDescriptor.setWantAssertionsSigned(
@@ -174,7 +174,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 				this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration));
 		spssoDescriptor.addSupportedProtocol(SAMLConstants.SAML20_NS);
 
-		this.messageObserver.updateDebug(this.getClass(),
+		this.messageObserver.updateDebug(this.getClass().getName(),
 				"Setting the key descriptors for: " + descriptor.getEntityID());
 
 		// set's the SIGNING and ENCRYPTION keyinfo.
@@ -212,7 +212,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 		spssoDescriptor.addSupportedProtocol(SAMLConstants.SAML20P_NS);
 		descriptor.getRoleDescriptors().add(spssoDescriptor);
 
-		this.messageObserver.updateDebug(this.getClass(), "Getting SP Entity Descriptor: DONE!");
+		this.messageObserver.updateDebug(this.getClass().getName(), "Getting SP Entity Descriptor: DONE!");
 
 		return descriptor;
 	}
@@ -233,7 +233,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	protected AssertionConsumerService createAssertionConsumerService(final int index, final String binding,
                                                                       final String location, final SAMLObjectBuilder<AssertionConsumerService> assertionConsumerServiceBuilder) {
 
-		this.messageObserver.updateDebug(this.getClass(), "Assertion consumer service Location: " + location);
+		this.messageObserver.updateDebug(this.getClass().getName(), "Assertion consumer service Location: " + location);
 
 		final AssertionConsumerService assertionConsumerServiceArtifact = assertionConsumerServiceBuilder.buildObject();
 		assertionConsumerServiceArtifact.setIndex(index);
@@ -257,7 +257,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	protected SingleLogoutService createSingleLogoutService(final String binding, final String location,
                                                             final SAMLObjectBuilder<SingleLogoutService> singleLogoutServiceBuilder) {
 
-		this.messageObserver.updateDebug(this.getClass(), "Assertion consumer service. Location: " + location);
+		this.messageObserver.updateDebug(this.getClass().getName(), "Assertion consumer service. Location: " + location);
 
 		final SingleLogoutService assertionConsumerService = singleLogoutServiceBuilder.buildObject();
 
@@ -357,18 +357,18 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 			} catch (final Exception e) {
 				final String errorMsg = String.format("An error occurred when generating credentials for IdP Config " +
 						"'%s' [%s]: %s", identityProviderConfiguration.getIdpName(), identityProviderConfiguration.getId(), e.getMessage());
-				this.messageObserver.updateError(this.getClass(), errorMsg, e);
+				this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
 				throw new SamlException(errorMsg, e);
 			}
 		} catch (final SamlException e) {
 
-			this.messageObserver.updateWarning(this.getClass(), "An error occurred when setting Key Descriptors. Continue...");
+			this.messageObserver.updateWarning(this.getClass().getName(), "An error occurred when setting Key Descriptors. Continue...");
 			throw e;
 		} catch (final Exception e) {
 
 			final String errorMsg = String.format("An error occurred when retrieving credentials for IdP Config " +
 					"'%s' [%s]: %s", identityProviderConfiguration.getIdpName(), identityProviderConfiguration.getId(), e.getMessage());
-			this.messageObserver.updateError(this.getClass(), errorMsg, e);
+			this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
 			throw new SamlException(errorMsg, e);
 		}
 	}
@@ -387,7 +387,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 		keyInfoGeneratorFactory.setEmitEntityCertificate(true);
 		final KeyInfoGenerator keyInfoGenerator = keyInfoGeneratorFactory.newInstance();
 
-		this.messageObserver.updateDebug(this.getClass(), "Getting Key Info from Metadata Credential: " + credential);
+		this.messageObserver.updateDebug(this.getClass().getName(), "Getting Key Info from Metadata Credential: " + credential);
 
 		return keyInfoGenerator.generate(credential);
 	}
@@ -446,7 +446,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 			credential = signing;
 		} catch (CertificateException e) {
 
-			this.messageObserver.updateError(this.getClass(), e.getMessage(), e);
+			this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
 			credential = null;
 		} finally {
 
@@ -469,7 +469,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 
 		idpDescriptor.getSingleSignOnServices().stream().forEach(sso -> {
 
-			this.messageObserver.updateDebug(this.getClass(),
+			this.messageObserver.updateDebug(this.getClass().getName(),
 					"Add SSO binding " + sso.getBinding() + " (" + sso.getLocation() + ")");
 			singleSignOnBindingLocationMap.put(sso.getBinding(), sso.getLocation());
 		});
@@ -484,12 +484,12 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 		try {
 			// Parse metadata file
 			final Element metadata = this.parserPool.parse(inputStream).getDocumentElement();
-			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class,
+			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class.getName(),
 					"The metadata element from the IdP Metadata " + (
 							(metadata == null) ? "is empty!" : "has a value!"));
 			// Get appropriate unmarshaller
 			final Unmarshaller unmarshaller = this.unmarshallerFactory.getUnmarshaller(metadata);
-			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class,
+			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class.getName(),
 					"The unmarshaller from the metadata element " + (
 							(unmarshaller == null) ? "is null!" : "has a value!"));
 			// Unmarshall using the document root element, an EntitiesDescriptor in this case
@@ -497,7 +497,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 		} catch (final Exception e) {
 
 			final String errorMsg = "An error occurred when parsing the IdP Metadata file: " + e.getMessage();
-			this.messageObserver.updateError(this.getClass(), errorMsg, e);
+			this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
 			throw new SamlException(errorMsg, e);
 		}
 

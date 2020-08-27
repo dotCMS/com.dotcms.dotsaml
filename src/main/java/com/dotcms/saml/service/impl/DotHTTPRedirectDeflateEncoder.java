@@ -36,7 +36,7 @@ public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
                                       final String endpoint,
                                       final String message) throws MessageEncodingException {
 
-        this.messageObserver.updateDebug(this.getClass(),
+        this.messageObserver.updateDebug(this.getClass().getName(),
                 "Building URL to redirect client to: " + endpoint);
         URLBuilder urlBuilder = null;
 
@@ -84,7 +84,7 @@ public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
             queryParams.add(new Pair("Signature", this.generateSignature(signingParameters.getSigningCredential(), sigAlgURI, sigMaterial)));
         } else {
 
-            this.messageObserver.updateDebug(this.getClass(),
+            this.messageObserver.updateDebug(this.getClass().getName(),
                     "No signing credential was supplied, skipping HTTP-Redirect DEFLATE signing");
         }
 

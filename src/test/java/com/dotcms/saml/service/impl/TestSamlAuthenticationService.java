@@ -36,7 +36,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
         final Map<String, String>  requestParamMap = new HashMap<>();
         final MockRequest  mockRequest             = new MockRequest();
         requestParamMap.put("SAMLResponse", "xxxxxxxx");
@@ -51,7 +51,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
         final MockRequest  mockRequest             = new MockRequest();
 
         Assert.assertFalse(samlAuthenticationService.isValidSamlRequest(mockRequest, null, idpFactory.findIdentityProviderConfigurationById("test.dotcms.com")));
@@ -63,7 +63,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
         final StringWriter stringWriter            = new StringWriter();
 
         samlAuthenticationService.renderMetadataXML(stringWriter, idpFactory.findIdentityProviderConfigurationById("test.dotcms.com"));
@@ -88,7 +88,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final String nameIDValue = samlAuthenticationService.getValue(nameID);
         Assert.assertNotNull(nameIDValue);
@@ -101,7 +101,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final String nameIDValue = samlAuthenticationService.getValue(null);
         Assert.assertNull(nameIDValue);
@@ -124,7 +124,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final List<String> nameIDValues = samlAuthenticationService.getValues(attribute);
         Assert.assertNotNull(nameIDValues);
@@ -139,7 +139,7 @@ public class TestSamlAuthenticationService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         final SamlAuthenticationService samlAuthenticationService = samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final List<String> nameIDValues = samlAuthenticationService.getValues(null);
         Assert.assertNull(nameIDValues);

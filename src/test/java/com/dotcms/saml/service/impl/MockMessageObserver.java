@@ -4,32 +4,32 @@ import com.dotcms.saml.MessageObserver;
 
 public class MockMessageObserver implements MessageObserver {
     @Override
-    public void updateError(Class aClass, String s) {
+    public void updateError(String aClass, String s) {
 
     }
 
     @Override
-    public void updateError(Class aClass, String s, Throwable throwable) {
+    public void updateError(String aClass, String s, Throwable throwable) {
 
     }
 
     @Override
-    public void updateError(Class aClass, String s, Object... objects) {
+    public void updateError(String aClass, String s, Object... objects) {
 
     }
 
     @Override
-    public void updateDebug(Class aClass, String s) {
+    public void updateDebug(String aClass, String s) {
 
     }
 
     @Override
-    public void updateInfo(Class aClass, String s) {
+    public void updateInfo(String aClass, String s) {
 
     }
 
     @Override
-    public void updateWarning(Class aClass, String s) {
+    public void updateWarning(String aClass, String s) {
 
     }
 }

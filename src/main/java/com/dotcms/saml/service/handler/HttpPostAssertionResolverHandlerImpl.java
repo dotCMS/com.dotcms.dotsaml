@@ -70,12 +70,12 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 		Response samlResponse   = null;
 		MessageContext<SAMLObject> messageContext = null;
 
-		this.messageObserver.updateDebug(this.getClass(),
-				"Resolving SAML Artifact with AssertionResolverHandler implementation: " + this.getClass());
+		this.messageObserver.updateDebug(this.getClass().getName(),
+				"Resolving SAML Artifact with AssertionResolverHandler implementation: " + this.getClass().getName());
 
 		try {
 
-			this.messageObserver.updateDebug(this.getClass(),
+			this.messageObserver.updateDebug(this.getClass().getName(),
 					"Decoding the Post message: " + request.getParameter(SAML_RESPONSE_KEY));
 
 			decoder.setHttpServletRequest(request);
@@ -87,12 +87,12 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 			messageContext = decoder.getMessageContext();
 			samlResponse = (Response) messageContext.getMessage();
 
-			this.messageObserver.updateDebug(this.getClass(),"Post message context decoded:");
-			this.messageObserver.updateDebug(this.getClass(),"\n\n" + SamlUtils.toXMLObjectString(samlResponse));
+			this.messageObserver.updateDebug(this.getClass().getName(),"Post message context decoded:");
+			this.messageObserver.updateDebug(this.getClass().getName(),"\n\n" + SamlUtils.toXMLObjectString(samlResponse));
 
 		} catch (ComponentInitializationException | MessageDecodingException e) {
 
-			this.messageObserver.updateError(this.getClass(),
+			this.messageObserver.updateError(this.getClass().getName(),
 					"Error decoding inbound message context for IdP '" + identityProviderConfiguration.getIdpName() + "'", e);
 			throw new SamlException(e.getMessage(), e);
 		} finally {
@@ -104,8 +104,8 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 
 		assertion = this.samlCoreService.getAssertion(samlResponse, identityProviderConfiguration);
 
-		this.messageObserver.updateDebug(this.getClass(), "Decrypted Assertion:");
-		this.messageObserver.updateDebug(this.getClass(), "\n\n" + SamlUtils.toXMLObjectString(assertion));
+		this.messageObserver.updateDebug(this.getClass().getName(), "Decrypted Assertion:");
+		this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(assertion));
 
 		// Verify Signatures.
 		this.samlCoreService.verifyResponseSignature(samlResponse, identityProviderConfiguration);
@@ -124,7 +124,7 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 
 		if (!statusCodeURI.equals(StatusCode.SUCCESS)) {
 
-			this.messageObserver.updateError(this.getClass(),
+			this.messageObserver.updateError(this.getClass().getName(),
 					"SAML status code was NOT successful: " + statusCode.getStatusCode().getValue());
 			throw new SamlException("SAML status code was NOT successful: " + statusCode.getValue());
 		}
@@ -148,7 +148,7 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 			}
 		} catch (Exception exception) {
 
-			this.messageObserver.updateInfo(this.getClass(),
+			this.messageObserver.updateInfo(this.getClass().getName(),
 					"Optional property not set: " + SamlName.DOT_SAML_CLOCK_SKEW + ". Using default.");
 		}
 
@@ -163,7 +163,7 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 
 		} catch (Exception exception) {
 
-			this.messageObserver.updateInfo(this.getClass(),
+			this.messageObserver.updateInfo(this.getClass().getName(),
 					"Optional property not set: " + SamlName.DOT_SAML_MESSAGE_LIFE_TIME.getPropertyName() + ". Using default.");
 		}
 

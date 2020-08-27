@@ -21,8 +21,9 @@ public class TestSamlCoreService {
 
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
+
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final NameID nameID = samlCoreService.buildSAMLObject(NameID.class);
@@ -35,7 +36,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final NameID nameID = samlCoreService.buildSAMLObject(NameID.class);
@@ -57,7 +58,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -78,7 +79,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -97,7 +98,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -116,7 +117,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -134,7 +135,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -152,7 +153,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -170,7 +171,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -189,7 +190,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -208,7 +209,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();
@@ -228,7 +229,7 @@ public class TestSamlCoreService {
         final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
         final SamlServiceBuilder samlServiceBuilder = new SamlServiceBuilderImpl();
         samlServiceBuilder.buildAuthenticationService(
-                idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+                idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
         final SamlCoreService samlCoreService = InstanceUtil.getInstance(SamlCoreService.class);
         final MockRequest     mockRequest     = new MockRequest();

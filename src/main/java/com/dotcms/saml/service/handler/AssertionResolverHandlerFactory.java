@@ -48,7 +48,7 @@ public class AssertionResolverHandlerFactory implements Serializable {
 					SamlName.DOTCMS_SAML_ASSERTION_RESOLVER_HANDLER_CLASS_NAME);
 		} catch (Exception exception) {
 
-			this.messageObserver.updateInfo(this.getClass(),
+			this.messageObserver.updateInfo(this.getClass().getName(),
 					"Optional property not set: "
 							+ SamlName.DOTCMS_SAML_ASSERTION_RESOLVER_HANDLER_CLASS_NAME.getPropertyName()
 							+ " for idpConfig: " + identityProviderConfiguration.getId() + " Using default.");
@@ -57,7 +57,7 @@ public class AssertionResolverHandlerFactory implements Serializable {
 		final AssertionResolverHandler assertionResolverHandler = StringUtils.isBlank(className)?
 				this.getDefaultAssertionResolverHandler() : this.getAssertionResolverHandler(className);
 
-		this.messageObserver.updateDebug(this.getClass(),
+		this.messageObserver.updateDebug(this.getClass().getName(),
 				"Getting the assertion resolver for the idpConfig: " + identityProviderConfiguration.getId()
 				+ ", with the class: " + assertionResolverHandler);
 

@@ -21,7 +21,7 @@ public class TestDefaultMetaDescriptorServiceImpl {
 
             final MockIdentityProviderConfigurationFactory idpFactory = new MockIdentityProviderConfigurationFactory();
 
-            new SamlServiceBuilderImpl().buildAuthenticationService(idpFactory, new MockMessageObserver(), new MockSamlConfigurationService());
+            new SamlServiceBuilderImpl().buildAuthenticationService(idpFactory, null, new MockMessageObserver(), new MockSamlConfigurationService());
 
             final MetaDescriptorService metaDescriptorService = InstanceUtil.getInstance(MetaDescriptorService.class);
 
