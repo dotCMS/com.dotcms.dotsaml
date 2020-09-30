@@ -1,5 +1,6 @@
 package com.dotcms.saml.service.impl;
 
+import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.MessageObserver;
@@ -177,6 +178,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
             this.messageObserver.updateDebug(this.getClass().getName(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
 
+            response.setHeader("Access-Control-Allow-Origin", "*");
             encoder.encode();
         } catch (ComponentInitializationException | MessageEncodingException e) {
 

@@ -41,7 +41,7 @@ public class SamlConstants {
 	/**
 	 * default logout path values
 	 */
-	public static final String DOT_SAML_LOGOUT_PATH_DEFAULT_VALUES = "/api/v1/logout,/c/portal/logout,/dotCMS/logout,/dotsaml/request/logout";
+	public static final String DOT_SAML_LOGOUT_PATH_DEFAULT_VALUES = "/api/v1/logout,/c/portal/logout,/dotCMS/logout,/dotsaml/request/logout,/dotAdmin/logout";
 
 	/**
 	 * Default SAML User role
