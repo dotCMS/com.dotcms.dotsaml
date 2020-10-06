@@ -24,7 +24,7 @@ public class SamlConfigurationServiceImpl extends DotAbstractSamlConfigurationSe
         final Map<String, String> map = new HashMap<>();
 
         map.put(SamlName.DOT_SAML_ENABLE.getPropertyName(),                        "true");
-        map.put(SamlName.DOT_SAML_ACCESS_FILTER_VALUES.getPropertyName(),          null);
+        map.put(SamlName.DOT_SAML_ACCESS_FILTER_VALUES.getPropertyName(),          "/dotAdmin/show-logout,/dotAdmin/logout");
         map.put(SamlName.DOTCMS_SAML_AUTHN_COMPARISON_TYPE.getPropertyName(),      null);
         map.put(SamlName.DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF.getPropertyName(),    AuthnContext.PASSWORD_AUTHN_CTX);
         map.put(SamlName.DOTCMS_SAML_BINDING_TYPE.getPropertyName(),               BindingType.REDIRECT.getBinding());
