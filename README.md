@@ -1,4 +1,4 @@
-## SAML SSO Provider for dotCMS 
+## SAML OSGI bundle for dotCMS 
 
 ![Screen Shot 2020-10-16 at 11 23 22 AM](https://user-images.githubusercontent.com/934364/96277374-2e400c00-0fa2-11eb-97bc-dd564312c802.png)
 
