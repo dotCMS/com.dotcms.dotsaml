@@ -1,16 +1,6 @@
 
 ## OSGI implementaion of the SAML plugin 
-## THIS IS CURRENTLY NON-FUNCTIONAL
-
-## TO DO
-* ~Convert to OSGI Plugin, fix red~
-* ~Upgraded to latest version of OpenSAML~
-* ~Plugin Activates and loads portlet correctly~
-* Convert Filters to Interceptors
-* Insure configs and properties are loading correctly (need to use url based loading)
-* ???
-
-
+## This osgi plugin is shipped with dotCMS and can be accessed and managed using the Apps functionality in dotCMS
 
 This plugin allows to modify the authentication process in DOTCMS
 using the Open SAML 3 (Security Assertion Markup Language) protocols for
