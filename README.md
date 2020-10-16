@@ -1,6 +1,10 @@
+## SAML Provider for dotCMS Apps
 
-## OSGI Based SAML Provider
-### This osgi plugin is shipped with dotCMS and can be accessed and managed using the Apps functionality in dotCMS
+![Screen Shot 2020-10-16 at 11 23 22 AM](https://user-images.githubusercontent.com/934364/96277374-2e400c00-0fa2-11eb-97bc-dd564312c802.png)
+
+
+
+### This OSGI bundle is shipped with dotCMS and can be accessed and managed using dotCMS Apps
 
 This plugin allows to modify the authentication process in DOTCMS
 using the Open SAML 3 (Security Assertion Markup Language) protocols for
@@ -13,7 +17,7 @@ are sent by the SAML response message. In addition, a system role will be assign
 The SAML Response should always send the user email, firstname and
 lastname. The roles are optional.
 
-##  <a name="how-to-use">HOW TO USE</a>
+##  HOW TO USE
 
 **Before installation:** Be sure your DB schema was previously initialized (dotCMS' DB tables were created). Having started the application at least once without the plugin is enough.
 
