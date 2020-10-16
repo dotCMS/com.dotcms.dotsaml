@@ -1,6 +1,6 @@
 
-## OSGI implementaion of the SAML plugin 
-## This osgi plugin is shipped with dotCMS and can be accessed and managed using the Apps functionality in dotCMS
+## OSGI Based SAML Provider
+### This osgi plugin is shipped with dotCMS and can be accessed and managed using the Apps functionality in dotCMS
 
 This plugin allows to modify the authentication process in DOTCMS
 using the Open SAML 3 (Security Assertion Markup Language) protocols for
