@@ -9,39 +9,120 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 /**
  * This activator will register the {@link SamlServiceBuilder} this class will provide the main facade
  * {@link com.dotcms.saml.SamlAuthenticationService} <br/>
  * In Addition there 3 interfaces that needs to be implemented on the client in order to interact with the custom client configuration.
+ *
  * @author jsanca
  */
 public class Activator extends GenericBundleActivator {
 
     private ServiceRegistration samlServiceBuilder;
 
+    private final static String[] CLASSES = new String[]{
+            "com.dotcms.saml.service.external.Attributes",
+            "com.dotcms.saml.service.external.AttributesNotFoundException",
+            "com.dotcms.saml.service.external.BindingType",
+            "com.dotcms.saml.service.external.InvalidIssuerValueException",
+            "com.dotcms.saml.service.external.MetaData",
+            "com.dotcms.saml.service.external.NotNullEmailAllowedException",
+            "com.dotcms.saml.service.external.SamlConstants",
+            "com.dotcms.saml.service.external.SamlException",
+            "com.dotcms.saml.service.external.SamlUnauthorizedException",
+            "com.dotcms.saml.service.internal.SamlCoreService",
+            "com.dotcms.saml.service.internal.EndpointService",
+            "com.dotcms.saml.service.internal.CredentialService",
+            "com.dotcms.saml.service.internal.CredentialProvider",
+            "com.dotcms.saml.service.internal.MetaDataService",
+            "com.dotcms.saml.service.internal.MetaDescriptorService",
+            "com.dotcms.saml.service.impl.MetaDataServiceImpl",
+            "com.dotcms.saml.service.impl.CredentialServiceImpl",
+            "com.dotcms.saml.service.impl.EndpointServiceImpl",
+            "com.dotcms.saml.service.impl.DefaultMetaDescriptorServiceImpl",
+            "com.dotcms.saml.service.impl.OpenSamlAuthenticationServiceImpl",
+            "com.dotcms.saml.service.impl.SamlConfigurationServiceImpl",
+            "com.dotcms.saml.service.impl.SamlCoreServiceImpl",
+            "com.dotcms.saml.service.impl.SamlServiceBuilderImpl",
+            "com.dotcms.saml.service.impl.DotHTTPPOSTDeflateEncoder",
+            "com.dotcms.saml.service.impl.DotHTTPRedirectDeflateEncoder",
+            "com.dotcms.saml.utils.IdpConfigCredentialResolver",
+            "com.dotcms.saml.utils.InstanceUtil",
+            "com.dotcms.saml.utils.MetaDataXMLPrinter",
+            "com.dotcms.saml.utils.SamlUtils",
+            "org.opensaml.xml.util.Base64",
+            "com.dotcms.saml.service.handler.AssertionResolverHandler",
+            "com.dotcms.saml.service.handler.AssertionResolverHandlerFactory",
+            "com.dotcms.saml.service.handler.AuthenticationHandler",
+            "com.dotcms.saml.service.handler.HttpPOSTAuthenticationHandler",
+            "com.dotcms.saml.service.handler.HttpRedirectAuthenticationHandler",
+            "com.dotcms.saml.service.handler.HttpPostAssertionResolverHandlerImpl",
+            "com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory",
+
+            "org.opensaml.saml.saml2.metadata.impl.EntityDescriptorImpl",
+            "org.opensaml.core.xml.XMLObject",
+            "org.opensaml.core.xml.util.AttributeMap",
+            "org.opensaml.core.xml.util.IndexedXMLObjectChildrenList",
+            "org.opensaml.core.xml.util.XMLObjectChildrenList",
+            "org.opensaml.saml.common.AbstractSignableSAMLObject",
+            "org.opensaml.saml.saml2.metadata.Extensions",
+            "org.opensaml.saml.saml2.metadata.AdditionalMetadataLocation",
+            "org.opensaml.saml.saml2.metadata.AffiliationDescriptor",
+            "org.opensaml.saml.saml2.metadata.AttributeAuthorityDescriptor",
+            "org.opensaml.saml.saml2.metadata.AuthnAuthorityDescriptor",
+            "org.opensaml.saml.saml2.metadata.ContactPerson",
+            "org.opensaml.saml.saml2.metadata.EntityDescriptor",
+            "org.opensaml.saml.saml2.metadata.IDPSSODescriptor",
+            "org.opensaml.saml.saml2.metadata.Organization",
+            "org.opensaml.saml.saml2.metadata.PDPDescriptor",
+            "org.opensaml.saml.saml2.metadata.RoleDescriptor",
+            "org.opensaml.saml.saml2.metadata.SPSSODescriptor",
+
+            "org.opensaml.core.xml.NamespaceManager",
+            "net.shibboleth.utilities.java.support.annotation.constraint.NotEmpty",
+            "net.shibboleth.utilities.java.support.collection.LazyMap",
+            "net.shibboleth.utilities.java.support.collection.LazySet",
+            "net.shibboleth.utilities.java.support.logic.Constraint",
+            "net.shibboleth.utilities.java.support.primitive.StringSupport",
+            "net.shibboleth.utilities.java.support.xml.XMLConstants"
+
+    };
+
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
 
         //Create an instance of our SamlServiceBuilderImpl
         //Classloading
-        final BundleWiring bundleWiring      = context.getBundle().adapt(BundleWiring.class);
-        final ClassLoader loader             = bundleWiring.getClassLoader();
+        final BundleWiring bundleWiring = context.getBundle().adapt(BundleWiring.class);
+        final ClassLoader loader = bundleWiring.getClassLoader();
         final Map<String, Object> contextMap = new HashMap<>();
-        final Initializer initializer        = new SamlInitializer();
+        final Initializer initializer = new SamlInitializer();
 
         contextMap.put("loader", loader);
         initializer.init(contextMap);
 
         final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
+        samlServiceBuilderImpl.setInitializer(initializer);
 
         //Register the TikaServiceBuilder as a OSGI service
         this.samlServiceBuilder = context
                 .registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
                         new Hashtable<>());
+
+        this.loadClasses();
 
         System.out.println("SAML OSGI STARTED.....");
     }
@@ -50,6 +131,36 @@ public class Activator extends GenericBundleActivator {
 
         //Unregister the registered services
         this.samlServiceBuilder.unregister();
+    }
+
+    private void loadClasses() {
+
+        try {
+
+            for (final String className : CLASSES) {
+                loadClass(className);
+            }
+
+            try (InputStream inputStream = Activator.class.getResourceAsStream("/classes-report.txt")) {
+
+                new BufferedReader(new InputStreamReader(inputStream)).lines()
+                        .forEach(line -> loadClass(line));
+            }
+        } catch (Throwable e) {
+            e.printStackTrace(System.out);
+        }
+    }
+
+    private void loadClass (final String classname) {
+
+        try {
+            Class.forName(classname.replaceAll("/", ".")
+                    .replace(".class", ""));
+            System.out.println(classname);
+        } catch (Throwable e) {
+            e.printStackTrace(System.out);
+        }
+
     }
 
 }
