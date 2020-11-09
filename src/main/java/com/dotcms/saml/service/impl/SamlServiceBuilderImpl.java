@@ -25,6 +25,10 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
 
     private Initializer initializer = null;
 
+    public void setInitializer(Initializer initializer) {
+        this.initializer = initializer;
+    }
+
     @Override
     public SamlConfigurationService buildSamlConfigurationService() {
         return new SamlConfigurationServiceImpl();
