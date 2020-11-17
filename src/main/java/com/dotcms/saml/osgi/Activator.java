@@ -61,7 +61,12 @@ public class Activator extends GenericBundleActivator {
             "com.dotcms.saml.service.handler.HttpPOSTAuthenticationHandler",
             "com.dotcms.saml.service.handler.HttpRedirectAuthenticationHandler",
             "com.dotcms.saml.service.handler.HttpPostAssertionResolverHandlerImpl",
-            "com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory"
+            "com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory",
+            "com.dotcms.saml.service.handler.HttpPOSTLogoutHandler",
+            "com.dotcms.saml.service.handler.HttpRedirectLogoutHandler",
+            "com.dotcms.saml.service.handler.LogoutHandler",
+            "com.dotcms.saml.service.handler.LogoutResolverHandlerFactory",
+            "com.dotcms.saml.service.handler.HttpOktaLogoutHandler"
     };
 
     private ServiceRegistration samlServiceBuilder;
@@ -116,7 +121,7 @@ public class Activator extends GenericBundleActivator {
         try {
             Class.forName(classname.replaceAll("/", ".")
                     .replace(".class", ""));
-            System.out.println(classname);
+            //System.out.println(classname);
         } catch (Throwable e) {
             e.printStackTrace(System.out);
         }

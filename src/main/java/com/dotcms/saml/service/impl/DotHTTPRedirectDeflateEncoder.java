@@ -2,6 +2,7 @@ package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.MessageObserver;
 import net.shibboleth.utilities.java.support.collection.Pair;
+import net.shibboleth.utilities.java.support.net.HttpServletSupport;
 import net.shibboleth.utilities.java.support.net.URLBuilder;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
@@ -13,6 +14,8 @@ import org.opensaml.saml.saml2.core.RequestAbstractType;
 import org.opensaml.saml.saml2.core.StatusResponseType;
 import org.opensaml.xmlsec.SignatureSigningParameters;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -89,6 +92,32 @@ public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
         }
 
         return urlBuilder.buildURL();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void doEncode() throws MessageEncodingException {
+        MessageContext<SAMLObject> messageContext = getMessageContext();
+        SAMLObject outboundMessage = messageContext.getMessage();
+
+        String endpointURL = getEndpointURL(messageContext).toString();
+
+        // removeSignature(outboundMessage);
+
+        String encodedMessage = deflateAndBase64Encode(outboundMessage);
+
+        String redirectURL = buildRedirectURL(messageContext, endpointURL, encodedMessage);
+
+        HttpServletResponse response = getHttpServletResponse();
+        HttpServletSupport.addNoCacheHeaders(response);
+        HttpServletSupport.setUTF8Encoding(response);
+
+        try {
+            response.sendRedirect(redirectURL);
+            this.messageObserver.updateInfo(this.getClass().getName(), "Doing a Redirect deflate");
+        } catch (IOException e) {
+            throw new MessageEncodingException("Problem sending HTTP redirect", e);
+        }
     }
 
 }

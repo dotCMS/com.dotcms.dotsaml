@@ -81,6 +81,7 @@ jar {
                     !org.bouncycastle.*,!com.google.common.*
                 ''',
                 'Include-Resource': '''
+                        lib/velocity-1.7.jar;lib:=true,
                         lib/jsr305-3.0.1.jar;lib:=true,                        
                         lib/guava-20.0.jar;lib:=true,
                         lib/commons-codec-1.10.jar;lib:=true,

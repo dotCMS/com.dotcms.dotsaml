@@ -120,7 +120,7 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		return identityProviderConfiguration;
 	}
 
-	protected X509Certificate getPublicCert(final char[] certFile) throws ResolverException {
+	public X509Certificate getPublicCert(final char[] certFile) throws ResolverException {
 
 		X509Certificate cert = null;
 
