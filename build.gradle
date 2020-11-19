@@ -159,7 +159,7 @@ task fragmentJar(type: Jar) {
     doFirst {
         //Setting the fragment jar name
         baseName = project.name
-        archiveName = "${baseName}.fragment-${version}.jar"
+        archiveName = "com.dotcms.samlbundle.fragment-${version}.jar"
         importPackage = fixVersionNumber(importPackage)
 
         manifest {
