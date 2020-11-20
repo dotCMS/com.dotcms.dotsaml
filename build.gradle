@@ -6,7 +6,7 @@ sourceCompatibility = '1.8'
 version = '20.11'
 
 repositories {
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "https://repo.dotcms.com/artifactory/libs-release" }
 }
 configurations {
     osgiLibs
@@ -14,7 +14,7 @@ configurations {
 dependencies {
 
 
-    compile('com.dotcms:dotcms:20.10.1') 
+    compile 'com.dotcms:dotcms:20.10.1' 
     compile  'org.opensaml:opensaml-core:3.3.1'
     compile  'org.opensaml:opensaml-saml-api:3.3.1'
     compile  'org.opensaml:opensaml-security-api:3.3.1'
@@ -23,8 +23,7 @@ dependencies {
     compile  'org.opensaml:opensaml-security-impl:3.3.1'
     compile  'org.opensaml:opensaml-messaging-impl:3.3.1'
     compile  'org.opensaml:opensaml-messaging-api:3.3.1'
-
-    compile  ('org.opensaml:opensaml-storage-impl:3.3.1')
+    compile  'org.opensaml:opensaml-storage-impl:3.3.1'
     compile  'org.opensaml:opensaml-storage-api:3.3.1'
     compile  'org.opensaml:opensaml-xacml-api:3.3.1'
     compile  'org.opensaml:opensaml-xacml-saml-api:3.3.1'
@@ -158,8 +157,8 @@ task fragmentJar(type: Jar) {
 
     doFirst {
         //Setting the fragment jar name
-        baseName = project.name
-        archiveName = "com.dotcms.samlbundle.fragment-${version}.jar"
+        baseName = jar.baseName
+        archiveName = "${baseName}.fragment-${version}.jar"
         importPackage = fixVersionNumber(importPackage)
 
         manifest {

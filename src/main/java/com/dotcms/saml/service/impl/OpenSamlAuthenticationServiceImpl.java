@@ -22,6 +22,7 @@ import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotmarketing.exception.DotRuntimeException;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xml.security.c14n.Canonicalizer;
@@ -424,7 +425,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (StringUtils.isBlank(lastNameForNullValue)) {
 
-            throw new SamlUnauthorizedException(exceptionMessage);
+            throw new DotRuntimeException(exceptionMessage);
         }
 
         this.messageObserver.updateInfo(this.getClass().getName(), logMessage);
@@ -474,22 +475,22 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (null == assertion) {
 
-            throw new AttributesNotFoundException("SAML Assertion is null");
+            throw new DotRuntimeException("SAML Assertion is null");
         }
 
         if (null == assertion.getAttributeStatements() || assertion.getAttributeStatements().isEmpty()) {
 
-            throw new AttributesNotFoundException("Attribute list in SAML Assertion is null or empty");
+            throw new DotRuntimeException("Attribute list in SAML Assertion is null or empty");
         }
 
         if (null == assertion.getSubject()) {
 
-            throw new AttributesNotFoundException("Subject in SAML Assertion is null");
+            throw new DotRuntimeException("Subject in SAML Assertion is null");
         }
 
         if (null == assertion.getSubject().getNameID() || assertion.getSubject().getNameID().getValue().isEmpty()) {
 
-            throw new AttributesNotFoundException("NameID in SAML Assertion is null or empty");
+            throw new DotRuntimeException("NameID in SAML Assertion is null or empty");
         }
     }
 
@@ -509,10 +510,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.metaDataXMLPrinter.print(descriptor, writer);
 
             this.messageObserver.updateDebug(this.getClass().getName(),"Metadata Descriptor printed.");
-        } catch (ParserConfigurationException | TransformerException | MarshallingException e) {
+        } catch (Exception e) {
 
             this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
-            throw new SamlException(e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
