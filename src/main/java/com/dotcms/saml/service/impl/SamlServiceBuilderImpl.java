@@ -8,6 +8,7 @@ import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory;
 import com.dotcms.saml.service.handler.HttpPostAssertionResolverHandlerImpl;
+import com.dotcms.saml.service.handler.LogoutResolverHandlerFactory;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
 import com.dotcms.saml.service.internal.CredentialService;
@@ -24,6 +25,10 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
 
 
     private Initializer initializer = null;
+
+    public void setInitializer(Initializer initializer) {
+        this.initializer = initializer;
+    }
 
     @Override
     public SamlConfigurationService buildSamlConfigurationService() {
@@ -56,9 +61,12 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
                 new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
         final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory =
                 new AuthenticationResolverHandlerFactory(samlConfigurationService, samlCoreService, velocityEngine, messageObserver);
+        final LogoutResolverHandlerFactory logoutResolverHandlerFactory =
+                new LogoutResolverHandlerFactory(samlConfigurationService, samlCoreService, velocityEngine, messageObserver);
         messageObserver.updateInfo(this.getClass().getName(), "Creating a new SamlAuthenticationService");
 
-        return new OpenSamlAuthenticationServiceImpl(authenticationResolverHandlerFactory, assertionResolverHandlerFactory, samlCoreService,
+        return new OpenSamlAuthenticationServiceImpl(logoutResolverHandlerFactory, authenticationResolverHandlerFactory,
+                assertionResolverHandlerFactory, samlCoreService,
                 samlConfigurationService, messageObserver, metaDescriptorService, this.initializer);
     }
 

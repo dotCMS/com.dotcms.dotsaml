@@ -1,6 +1,5 @@
 package com.dotcms.saml.service.impl;
 
-import com.dotcms.rest.annotation.AccessControlAllowOrigin;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.MessageObserver;
@@ -15,14 +14,20 @@ import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.service.handler.AuthenticationHandler;
 import com.dotcms.saml.service.handler.AuthenticationResolverHandlerFactory;
+import com.dotcms.saml.service.handler.LogoutHandler;
+import com.dotcms.saml.service.handler.LogoutResolverHandlerFactory;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotmarketing.exception.DotRuntimeException;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.core.xml.XMLObject;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
@@ -36,9 +41,16 @@ import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
+import org.opensaml.security.credential.Credential;
 import org.opensaml.xmlsec.SignatureSigningParameters;
 import org.opensaml.xmlsec.context.SecurityParametersContext;
+import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.X509Certificate;
+import org.opensaml.xmlsec.signature.X509Data;
+import org.opensaml.xmlsec.signature.support.ConfigurableContentReference;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
+import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignerProviderImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,6 +67,7 @@ import java.util.Map;
  */
 public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationService {
 
+    private final LogoutResolverHandlerFactory         logoutResolverHandlerFactory;
     private final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory;
     private final AssertionResolverHandlerFactory assertionResolverHandlerFactory;
     private final SamlCoreService                 samlCoreService;
@@ -64,7 +77,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     private final MetaDataXMLPrinter              metaDataXMLPrinter;
     private final Initializer                     initializer;
 
-    public OpenSamlAuthenticationServiceImpl(final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory,
+    public OpenSamlAuthenticationServiceImpl(final LogoutResolverHandlerFactory logoutResolverHandlerFactory,
+                                             final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory,
                                              final AssertionResolverHandlerFactory assertionResolverHandlerFactory,
                                              final SamlCoreService samlCoreService,
                                              final SamlConfigurationService samlConfigurationService,
@@ -72,6 +86,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                                              final MetaDescriptorService metaDescriptorService,
                                              final Initializer initializer) {
 
+        this.logoutResolverHandlerFactory         = logoutResolverHandlerFactory;
         this.authenticationResolverHandlerFactory = authenticationResolverHandlerFactory;
         this.assertionResolverHandlerFactory = assertionResolverHandlerFactory;
         this.samlCoreService          = samlCoreService;
@@ -125,21 +140,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                        final String sessionIndexValue,
                        final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final MessageContext context      = new MessageContext(); // main context
-        final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(identityProviderConfiguration, NameID.class.cast(nameID), sessionIndexValue);
+        final LogoutHandler logoutHandler =
+            this.logoutResolverHandlerFactory.getLogoutHandlerForSite(identityProviderConfiguration);
 
-        context.setMessage(logoutRequest);
-
-        // peer entity (Idp to SP and viceversa)
-        final SAMLPeerEntityContext peerEntityContext = context.getSubcontext(SAMLPeerEntityContext.class, true);
-        // info about the endpoint of the peer entity
-        final SAMLEndpointContext endpointContext = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
-
-        endpointContext.setEndpoint(this.samlCoreService
-                .getIdentityProviderSLODestinationEndpoint(identityProviderConfiguration));
-
-        this.setSignatureSigningParams(context, identityProviderConfiguration);
-        this.doRedirect(context, response, logoutRequest, identityProviderConfiguration);
+        logoutHandler.handle(request, response, nameID, sessionIndexValue, identityProviderConfiguration);
     }
 
     @SuppressWarnings("rawtypes")
@@ -180,6 +184,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
             response.setHeader("Access-Control-Allow-Origin", "*");
             encoder.encode();
+
+            this.messageObserver.updateDebug(this.getClass().getName(), "Redirect to IdP '" + identityProviderConfiguration.getIdpName() + "' DONE");
         } catch (ComponentInitializationException | MessageEncodingException e) {
 
             final String errorMsg = "An error occurred when executing redirect to IdP '" +
@@ -419,7 +425,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (StringUtils.isBlank(lastNameForNullValue)) {
 
-            throw new SamlUnauthorizedException(exceptionMessage);
+            throw new DotRuntimeException(exceptionMessage);
         }
 
         this.messageObserver.updateInfo(this.getClass().getName(), logMessage);
@@ -469,22 +475,22 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (null == assertion) {
 
-            throw new AttributesNotFoundException("SAML Assertion is null");
+            throw new DotRuntimeException("SAML Assertion is null");
         }
 
         if (null == assertion.getAttributeStatements() || assertion.getAttributeStatements().isEmpty()) {
 
-            throw new AttributesNotFoundException("Attribute list in SAML Assertion is null or empty");
+            throw new DotRuntimeException("Attribute list in SAML Assertion is null or empty");
         }
 
         if (null == assertion.getSubject()) {
 
-            throw new AttributesNotFoundException("Subject in SAML Assertion is null");
+            throw new DotRuntimeException("Subject in SAML Assertion is null");
         }
 
         if (null == assertion.getSubject().getNameID() || assertion.getSubject().getNameID().getValue().isEmpty()) {
 
-            throw new AttributesNotFoundException("NameID in SAML Assertion is null or empty");
+            throw new DotRuntimeException("NameID in SAML Assertion is null or empty");
         }
     }
 
@@ -504,10 +510,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.metaDataXMLPrinter.print(descriptor, writer);
 
             this.messageObserver.updateDebug(this.getClass().getName(),"Metadata Descriptor printed.");
-        } catch (ParserConfigurationException | TransformerException | MarshallingException e) {
+        } catch (Exception e) {
 
             this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
-            throw new SamlException(e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 

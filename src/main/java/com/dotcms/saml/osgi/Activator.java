@@ -5,10 +5,14 @@ import com.dotcms.saml.service.impl.SamlServiceBuilderImpl;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
 import com.dotmarketing.osgi.GenericBundleActivator;
+import com.dotmarketing.servlets.InitServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -26,25 +30,40 @@ public class Activator extends GenericBundleActivator {
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
 
+        System.out.println("SAML OSGI STARTING INIT.....");
         //Create an instance of our SamlServiceBuilderImpl
         //Classloading
-        final BundleWiring bundleWiring      = context.getBundle().adapt(BundleWiring.class);
-        final ClassLoader loader             = bundleWiring.getClassLoader();
-        final Map<String, Object> contextMap = new HashMap<>();
-        final Initializer initializer        = new SamlInitializer();
+        final ClassLoader  currentThreadClassLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader bundleClassLoader         = this.getClass().getClassLoader();
 
-        contextMap.put("loader", loader);
-        initializer.init(contextMap);
+        try {
 
-        final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
+            final Map<String, Object> contextMap = new HashMap<>();
+            final Initializer initializer = new SamlInitializer();
 
-        //Register the TikaServiceBuilder as a OSGI service
-        this.samlServiceBuilder = context
-                .registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
-                        new Hashtable<>());
+            System.out.println("currentThreadClassLoader: " + currentThreadClassLoader);
+            System.out.println("bundleClassLoader: " + bundleClassLoader);
 
-        System.out.println("SAML OSGI STARTED.....");
+            contextMap.put("loader", bundleClassLoader);
+            initializer.init(contextMap);
+
+            final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
+            samlServiceBuilderImpl.setInitializer(initializer);
+
+            //Register the TikaServiceBuilder as a OSGI service
+            this.samlServiceBuilder = context
+                    .registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
+                            new Hashtable<>());
+
+            System.out.println("SAML OSGI STARTED.....");
+        } finally {
+            if (null != currentThreadClassLoader) {
+                Thread.currentThread().setContextClassLoader(currentThreadClassLoader);
+            }
+        }
     }
+
+
 
     public void stop(final BundleContext context) throws Exception {
 
