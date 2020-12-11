@@ -3,7 +3,7 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '20.11'
+version = '20.12'
 
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
@@ -14,7 +14,7 @@ configurations {
 dependencies {
 
 
-    compile 'com.dotcms:dotcms:20.10.1' 
+    compile 'com.dotcms:dotcms:20.11'
     compile  'org.opensaml:opensaml-core:3.3.1'
     compile  'org.opensaml:opensaml-saml-api:3.3.1'
     compile  'org.opensaml:opensaml-security-api:3.3.1'
@@ -45,13 +45,22 @@ jar {
                 'Bundle-Description': 'dotCMS - SAML Provider',
                 'Bundle-DocURL': 'https://dotcms.com/',
                 'Bundle-Activator': 'com.dotcms.saml.osgi.Activator',
+                'Bundle-ClassPath' : "${classPathLibraries()}",
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
+                    javax.servlet;version=0,
+                    javax.servlet.jsp.*;resolution:=optional,
+                    javax.servlet.annotation;version=0,
+                    javax.servlet.http;version=0,
+                    javax.naming;version=0,
+                    org.apache.velocity.*,\t
                     !com.google.common.*,
                     *;version=0.1
                     
                 ''',
                 'Include-Resource': '''
+                        lib/dot.slf4j-api-1.7.12_2.jar;lib:=true,
+                        lib/log4j-slf4j-impl-2.8.2.jar;lib:=true,
                         lib/guava-20.0.jar;lib:=true,
                         lib/commons-collections-3.2.1.jar;lib:=true,
                         lib/commons-io-2.6.jar;lib:=true,
