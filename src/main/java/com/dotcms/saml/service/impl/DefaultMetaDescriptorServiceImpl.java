@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.xml.namespace.QName;
 
 /**
  * Idp Meta Descriptor service default implementation.
@@ -480,13 +481,19 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	protected EntityDescriptor unmarshall(final InputStream inputStream)  {
 
 		EntityDescriptor descriptor;
-
+		
+		// load the unmarshallers - this fixed an NPE, perhaps because of the QNAME import
+		final Map<QName,Unmarshaller> unmarshallers = this.unmarshallerFactory.getUnmarshallers();
+		
 		try {
 			// Parse metadata file
 			final Element metadata = this.parserPool.parse(inputStream).getDocumentElement();
 			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class.getName(),
 					"The metadata element from the IdP Metadata " + (
 							(metadata == null) ? "is empty!" : "has a value!"));
+			
+			
+			
 			// Get appropriate unmarshaller
 			final Unmarshaller unmarshaller = this.unmarshallerFactory.getUnmarshaller(metadata);
 			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class.getName(),
