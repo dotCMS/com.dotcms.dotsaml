@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.xml.namespace.QName;
 
 /**
  * Idp Meta Descriptor service default implementation.
@@ -482,6 +483,8 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 		EntityDescriptor descriptor;
 
 		try {
+		    
+		    final Map<QName,Unmarshaller> unmarshallers = this.unmarshallerFactory.getUnmarshallers();
 			// Parse metadata file
 			final Element metadata = this.parserPool.parse(inputStream).getDocumentElement();
 			this.messageObserver.updateInfo(DefaultMetaDescriptorServiceImpl.class.getName(),
