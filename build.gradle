@@ -14,7 +14,7 @@ configurations {
 dependencies {
 
 
-    compile  ('com.dotcms:dotcms:20.11.1') { transitive = true }
+    compile  ('com.dotcms:dotcms:20.11.1') { transitive = false }
     compile  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -33,9 +33,14 @@ dependencies {
     compile  ('org.opensaml:opensaml-soap-impl:3.3.1') { transitive = false }
     compile  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1')
     compile  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
+    compile  ('commons-io:commons-io:2.8.0') { transitive = false }
+    compile  (group: 'org.apache.servicemix.bundles', name:'org.apache.servicemix.bundles.opensaml', version:'3.3.1_1'){
+        exclude(group: 'velocity')
+        exclude(group: 'org.apache.velocity')
+        exclude(group: 'commons-logging')
+        exclude(group: 'org.slf4j')
+    }
     
-    // everything except dotCMS
-
     osgiLibs  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -57,8 +62,10 @@ dependencies {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    
-    
+
+    compileOnly ('org.apache.felix:org.apache.felix.main:5.6.10') { transitive = false }
+    compileOnly ('javax.servlet:javax.servlet-api:3.1.0'){ transitive = false }
+
     testCompile 'junit:junit:4.12'
     
 }
@@ -78,18 +85,18 @@ jar {
                 'Bundle-ClassPath' : "${classPathLibraries()}",
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
-                    javax.servlet;version=0,
-                    javax.servlet.jsp.*;resolution:=optional,
-                    javax.servlet.annotation;version=0,
-                    javax.servlet.http;version=0,
-                    javax.naming;version=0,
-                    !org.apache.velocity.*,
                     !com.google.common.*,
                     !org.opensaml.*,
-                    *;version=0.1
                     
+                    *;version=0.1
                 '''
         )
+    }
+}
+
+task cleanLibFiles(type: Delete) {
+    delete fileTree("src/main/resources/libs").matching {
+        include "**/*"
     }
 }
 
@@ -98,7 +105,10 @@ task copyToLib(type: Copy) {
     from configurations.osgiLibs
 }
 
+copyToLib.dependsOn cleanLibFiles
 compileJava.dependsOn copyToLib
+
+
 jar.finalizedBy 'fragmentJar'
 
 /**
