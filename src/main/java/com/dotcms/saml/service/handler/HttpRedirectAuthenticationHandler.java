@@ -58,7 +58,11 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
-        this.setSignatureSigningParams(context, identityProviderConfiguration);
+        final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
+        if (needSignatureSigningParams) {
+            this.setSignatureSigningParams(context, identityProviderConfiguration);
+        }
         this.doRedirect(context, response, authnRequest, identityProviderConfiguration);
     }
 

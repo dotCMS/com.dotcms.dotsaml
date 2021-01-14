@@ -43,10 +43,10 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
     }
 
     @Override
-    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration idpConfig) {
+    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration identityProviderConfiguration) {
 
         final MessageContext context    = new MessageContext(); // main context
-        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, idpConfig, SAMLConstants.SAML2_POST_BINDING_URI);
+        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
 
         context.setMessage(authnRequest);
 
@@ -55,10 +55,14 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
         // info about the endpoint of the peer entity
         final SAMLEndpointContext endpointContext     = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
 
-        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(idpConfig));
+        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
-        this.setSignatureSigningParams(context, idpConfig);
-        this.doPost(context, response, authnRequest, idpConfig);
+        final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
+        if (needSignatureSigningParams) {
+            this.setSignatureSigningParams(context, identityProviderConfiguration);
+        }
+        this.doPost(context, response, authnRequest, identityProviderConfiguration);
     }
 
     private void setSignatureSigningParams(final MessageContext context, final IdentityProviderConfiguration idpConfig) {

@@ -817,7 +817,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	 * @return Credential
 	 */
 	@Override
-	public Credential getCredential(final IdentityProviderConfiguration identityProviderConfiguration) {
+	public Credential 	getCredential(final IdentityProviderConfiguration identityProviderConfiguration) {
 
 		if (!credentialMap.containsKey(identityProviderConfiguration.getSpEndpointHostname())) {
 
