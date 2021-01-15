@@ -7,12 +7,10 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPRedirectDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
-import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotcms.saml.utils.SignatureUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
-import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.core.xml.XMLObject;
-import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
 import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
@@ -20,16 +18,9 @@ import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.saml2.binding.encoding.impl.HTTPRedirectDeflateEncoder;
 import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.NameID;
-import org.opensaml.security.credential.Credential;
-import org.opensaml.xmlsec.SignatureSigningParameters;
-import org.opensaml.xmlsec.context.SecurityParametersContext;
-import org.opensaml.xmlsec.signature.KeyInfo;
+import org.opensaml.security.x509.X509Credential;
 import org.opensaml.xmlsec.signature.Signature;
-import org.opensaml.xmlsec.signature.X509Certificate;
-import org.opensaml.xmlsec.signature.X509Data;
-import org.opensaml.xmlsec.signature.support.ConfigurableContentReference;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
-import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignerProviderImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -78,17 +69,11 @@ public class HttpRedirectLogoutHandler implements LogoutHandler {
                 logoutRequest.setSignature(signature);
 
                 // Marshall and Sign
-                XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(logoutRequest).marshall(logoutRequest);
-                if (null != signature.getContentReferences() && !signature.getContentReferences().isEmpty()) {
+                final String digestAlgorithm = identityProviderConfiguration.containsOptionalProperty("logout.signature.reference.digestmethod.algorithm") ?
+                        (String) identityProviderConfiguration.getOptionalProperty("logout.signature.reference.digestmethod.algorithm") :
+                        SignatureConstants.ALGO_ID_DIGEST_SHA256;
 
-                    final String digestAlgorithm = identityProviderConfiguration.containsOptionalProperty("logout.signature.reference.digestmethod.algorithm") ?
-                            (String) identityProviderConfiguration.getOptionalProperty("logout.signature.reference.digestmethod.algorithm") :
-                            SignatureConstants.ALGO_ID_DIGEST_SHA256;
-                    this.messageObserver.updateInfo(this.getClass().getName(), "digestAlgorithm = " + digestAlgorithm);
-                    ConfigurableContentReference.class.cast(signature.getContentReferences().get(0)).setDigestAlgorithm(digestAlgorithm);
-                }
-
-                new ApacheSantuarioSignerProviderImpl().signObject(signature);
+                SignatureUtils.marshalAndSing(logoutRequest, this.messageObserver, signature, digestAlgorithm);
             } catch (Exception e) {
 
                 this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
@@ -104,53 +89,23 @@ public class HttpRedirectLogoutHandler implements LogoutHandler {
                 .getIdentityProviderSLODestinationEndpoint(identityProviderConfiguration));
 
         context.setMessage(logoutRequest);
-        this.setSignatureSigningParams(context, identityProviderConfiguration);
+
+        final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("logout.sign.params")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("logout.sign.params").toString()): true;
+        if (needSignatureSigningParams) {
+            SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
+        }
 
         this.doRedirect(context, response, logoutRequest, identityProviderConfiguration);
     }
 
     private Signature createSignature(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final Credential credential     = this.samlCoreService.getCredential(identityProviderConfiguration);
+        final X509Credential credential     = (X509Credential) this.samlCoreService.getCredential(identityProviderConfiguration);
         final String signatureAlgorithm = identityProviderConfiguration.containsOptionalProperty("logout.signature.algorithm")?
                 (String)identityProviderConfiguration.getOptionalProperty("logout.signature.algorithm"):SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
-        final Signature signature       = this.samlCoreService.buildSAMLObject(Signature.class);
-        signature.setSigningCredential(credential);
-        signature.setSignatureAlgorithm(signatureAlgorithm);
-        signature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
 
-        try {
-
-            final KeyInfo keyInfo       = this.samlCoreService.buildSAMLObject(KeyInfo.class);
-            final X509Data data         = this.samlCoreService.buildSAMLObject(X509Data.class);
-            final X509Certificate cert  = this.samlCoreService.buildSAMLObject(X509Certificate.class);
-            final IdpConfigCredentialResolver credentialResolver = new IdpConfigCredentialResolver(null, this.messageObserver);
-            final String value =
-                    org.apache.xml.security.utils.Base64.encode(credentialResolver.getPublicCert(identityProviderConfiguration.getPublicCert()).getEncoded());
-            cert.setValue(value);
-            data.getX509Certificates().add(cert);
-            keyInfo.getX509Datas().add(data);
-            signature.setKeyInfo(keyInfo);
-        } catch (Exception e) {
-
-            this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
-            throw new RuntimeException("Error getting certificate", e);
-        }
-
-        return signature;
-    }
-
-    @SuppressWarnings("rawtypes")
-    protected void setSignatureSigningParams(final MessageContext context,
-                                             final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
-
-        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(identityProviderConfiguration));
-        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-
-        context.getSubcontext(SecurityParametersContext.class, true)
-                .setSignatureSigningParameters(signatureSigningParameters);
+        return SignatureUtils.createSignature(this.samlCoreService, this.messageObserver, credential, signatureAlgorithm);
     }
 
     // this makes the redirect to the IdP

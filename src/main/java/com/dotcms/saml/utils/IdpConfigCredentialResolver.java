@@ -164,7 +164,6 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		}
 
 		try {
-			// TODO This locks in the private key type to RSA. We will need to review.
 			String stringPrivateKey = new String(keyFile);
 			stringPrivateKey = stringPrivateKey.replace("-----BEGIN PRIVATE KEY-----\n", StringUtils.EMPTY);
 			stringPrivateKey = stringPrivateKey.replace("-----END PRIVATE KEY-----", StringUtils.EMPTY);
