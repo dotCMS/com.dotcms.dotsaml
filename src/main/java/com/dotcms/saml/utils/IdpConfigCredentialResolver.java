@@ -153,7 +153,7 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 		return cert;
 	}
 
-	protected PrivateKey getPrivateKey(final char[] keyFile) throws ResolverException {
+	public PrivateKey getPrivateKey(final char[] keyFile) throws ResolverException {
 
 		PrivateKey privateKey = null;
 
@@ -169,7 +169,8 @@ public class IdpConfigCredentialResolver extends AbstractCriteriaFilteringCreden
 			stringPrivateKey = stringPrivateKey.replace("-----END PRIVATE KEY-----", StringUtils.EMPTY);
 
 			final KeyFactory keyFactory            = KeyFactory.getInstance("RSA");
-			final PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(Base64.decode(stringPrivateKey));
+			//final PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(Base64.decode(stringPrivateKey));
+			final PKCS8EncodedKeySpec keySpecPKCS8 = new PKCS8EncodedKeySpec(org.apache.commons.codec.binary.Base64.decodeBase64(stringPrivateKey));
 			privateKey = keyFactory.generatePrivate(keySpecPKCS8);
 		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
 

@@ -11,9 +11,9 @@ import com.dotcms.saml.service.internal.EndpointService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.utils.EncryptedAssertionDecrypter;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
-import com.dotmarketing.util.Logger;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
@@ -43,21 +43,27 @@ import org.opensaml.saml.saml2.metadata.Endpoint;
 import org.opensaml.saml.saml2.metadata.SingleLogoutService;
 import org.opensaml.saml.saml2.metadata.SingleSignOnService;
 import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
+import org.opensaml.security.credential.BasicCredential;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.credential.CredentialSupport;
 import org.opensaml.security.crypto.KeySupport;
+import org.opensaml.xmlsec.encryption.EncryptedKey;
 import org.opensaml.xmlsec.encryption.support.DecryptionException;
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver;
 import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
+import org.w3c.dom.DOMException;
 
+import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.namespace.QName;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -516,7 +522,6 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				SamlName.DOTCMS_SAML_IS_ASSERTION_ENCRYPTED)) {
 
 			encryptedAssertion = response.getEncryptedAssertions().get(0);
-			/// this is the user message itself
 			assertion = this.decryptAssertion(encryptedAssertion, identityProviderConfiguration);
 		} else {
 
@@ -539,6 +544,17 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		return response.getEncryptedAssertions().get(0);
 	}
 
+	private EncryptedKey findEncryptedKey (final EncryptedAssertion encryptedAssertion) {
+
+		final List<EncryptedKey>  encryptedKeys = encryptedAssertion.getEncryptedKeys();
+		if (null != encryptedKeys && !encryptedKeys.isEmpty()) {
+
+			return encryptedKeys.get(0);
+		}
+
+		return encryptedAssertion.getEncryptedData().getKeyInfo().getEncryptedKeys().get(0);
+	}
+
 	/**
 	 * Decrypt an {@link EncryptedAssertion}
 	 *
@@ -550,9 +566,85 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	public Assertion decryptAssertion(final EncryptedAssertion encryptedAssertion,
 									  final IdentityProviderConfiguration identityProviderConfiguration) {
 
+		Assertion assertion         = null;
+		SamlException samlException = null;
+		final Credential credential = this.getCredential(identityProviderConfiguration);
+		final StaticKeyInfoCredentialResolver keyInfoCredentialResolver = new StaticKeyInfoCredentialResolver(credential);
+		final EncryptedKey key       = this.findEncryptedKey(encryptedAssertion);
+		final Decrypter keyDecrypter = new Decrypter(null, keyInfoCredentialResolver, null);
+
+		this.messageObserver.updateInfo(this.getClass().getName(), "Credential: " + credential
+				+ ", key: " + key + ", Algorithm" + encryptedAssertion.getEncryptedData().
+				getEncryptionMethod().getAlgorithm() + ", credential.getPrivateKey(): " + credential.getPrivateKey() +
+				", encryptedAssertion: " + encryptedAssertion);
+
+		try {
+
+			keyDecrypter.setRootInNewDocument(true);
+			final SecretKey decryptKey = (SecretKey) keyDecrypter.decryptKey(key, encryptedAssertion.getEncryptedData().
+					getEncryptionMethod().getAlgorithm());
+
+			this.messageObserver.updateInfo(this.getClass().getName(), "decryptKey: " + decryptKey);
+			assertion = new EncryptedAssertionDecrypter(this.messageObserver).decrypt(encryptedAssertion, decryptKey);
+		} catch (DecryptionException | IllegalArgumentException | DOMException e) {
+
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "DecryptionException: " + e.getMessage(), e);
+			samlException = new SamlException(e.getMessage(), e);
+		}
+
+		if (null == assertion) {
+
+			assertion = this.decryptAssertionUsingInlineEncrypter(encryptedAssertion, identityProviderConfiguration, credential);
+			// not assertion and gets previously an error.
+			if (null == assertion && samlException != null) {
+
+				throw samlException;
+			}
+		}
+
+		return assertion;
+	}
+
+	private static class InitialCredential extends BasicCredential {
+
+		InitialCredential(final PrivateKey privateKey) {
+			super();
+			this.setPrivateKey(privateKey);
+		}
+	}
+
+	private Assertion decryptAssertionUsingInlineEncrypter (final EncryptedAssertion encryptedAssertion,
+															final IdentityProviderConfiguration identityProviderConfiguration,
+															final Credential credential) {
+
+		Assertion assertion = null;
+
+		try {
+
+			final BasicCredential basicCredential = new InitialCredential(new IdpConfigCredentialResolver(this.identityProviderConfigurationFactory,
+					this.messageObserver).getPrivateKey(identityProviderConfiguration.getPrivateKey()));
+			final Decrypter decrypter = new Decrypter(null,
+					new StaticKeyInfoCredentialResolver(basicCredential),
+					new InlineEncryptedKeyResolver());
+			decrypter.setRootInNewDocument(true);
+
+			assertion = decrypter.decrypt(encryptedAssertion);
+		} catch (DecryptionException | ResolverException e) {
+
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
+			throw new SamlException(e.getMessage(), e);
+		}
+
+		return assertion;
+	}
+
+	/*private Assertion decryptAssertionUsingInlineEncrypter (final EncryptedAssertion encryptedAssertion,
+												  			final IdentityProviderConfiguration identityProviderConfiguration,
+															final Credential credential) {
+
 		Assertion assertion = null;
 		final StaticKeyInfoCredentialResolver keyInfoCredentialResolver =
-				new StaticKeyInfoCredentialResolver(this.getCredential(identityProviderConfiguration));
+				new StaticKeyInfoCredentialResolver(credential);
 
 		final Decrypter decrypter = new Decrypter(null, keyInfoCredentialResolver, new InlineEncryptedKeyResolver());
 
@@ -567,7 +659,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		}
 
 		return assertion;
-	}
+	}*/
 
 	private void validateSignature(final Assertion assertion, final Collection<Credential> credentials)
 			throws SignatureException {
