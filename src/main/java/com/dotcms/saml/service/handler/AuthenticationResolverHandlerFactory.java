@@ -52,6 +52,8 @@ public class AuthenticationResolverHandlerFactory implements Serializable {
 				return new HttpRedirectAuthenticationHandler(this.samlCoreService, this.messageObserver, this.samlConfigurationService);
 			case DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_POST:
 				return new HttpPOSTAuthenticationHandler(this.samlCoreService, this.velocityEngine, this.messageObserver);
+			case "Http-POST-Raw":  // todo: change this on new core change
+				return new HttpPOSTRawAuthenticationHandler(this.samlCoreService, this.messageObserver);
 		}
 
 		return new HttpRedirectAuthenticationHandler(this.samlCoreService, this.messageObserver, this.samlConfigurationService);

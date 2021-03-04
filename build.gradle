@@ -13,6 +13,7 @@ configurations {
 }
 dependencies {
 
+    testCompile "javax.servlet:javax.servlet-api:3.1.0"
 
     compile  ('com.dotcms:dotcms:20.11.1') { transitive = false }
     compile  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
