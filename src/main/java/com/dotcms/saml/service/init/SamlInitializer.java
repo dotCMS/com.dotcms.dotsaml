@@ -5,7 +5,8 @@ import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.xmlsec.config.JavaCryptoValidationInitializer;
-
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Map;
@@ -29,60 +30,50 @@ public class SamlInitializer implements Initializer {
 	@Override
 	public synchronized void init(final Map<String, Object> context) {
 
-		final ClassLoader loader =
-				null != context && context.containsKey("loader")?
-					(ClassLoader)context.get("loader"):null;
-		final Thread      thread = Thread.currentThread();
+
+		final ClassLoader  threadLoader = Thread.currentThread().getContextClassLoader();
 
 		try {
+			Thread.currentThread().setContextClassLoader(InitializationService.class.getClassLoader());
 
-			if (null != loader) {
+			Logger.info(this.getClass().getName(),"Initializing SAML..." );
+			
+			new org.opensaml.core.metrics.impl.MetricRegistryInitializer().init();
+			new org.opensaml.xacml.profile.saml.config.XMLObjectProviderInitializer().init();
+			new org.opensaml.xacml.config.XMLObjectProviderInitializer().init();
+			new org.opensaml.saml.config.XMLObjectProviderInitializer().init();
+			new org.opensaml.saml.config.SAMLConfigurationInitializer().init();
+			new org.opensaml.core.xml.config.XMLObjectProviderInitializer().init();
+			new org.opensaml.xmlsec.config.XMLObjectProviderInitializer().init();
+			new org.opensaml.security.config.ClientTLSValidationConfiguratonInitializer().init();
+			new org.opensaml.xmlsec.config.GlobalAlgorithmRegistryInitializer().init();
+			new org.opensaml.xmlsec.config.ApacheXMLSecurityInitializer().init();
+			new org.opensaml.xmlsec.config.GlobalSecurityConfigurationInitializer().init();
+			new org.opensaml.xmlsec.config.JavaCryptoValidationInitializer().init();
 
-				thread.setContextClassLoader(InitializationService.class.getClassLoader());
-			}
-
-			System.out.println("Initializing SAML..." );
-			InitializationService.initialize();
-
-			System.out.println("SAML Init DONE" );
+			Logger.info(this.getClass().getName(),"Doing instance of Java Crypto validator");
+			Logger.info(this.getClass().getName(),"Getting the Security Providers");
+	        for (final Provider jceProvider : Security.getProviders()) {
+	            Logger.info(this.getClass().getName(),"-" + jceProvider.getInfo());
+	        }
+			
+	        Logger.info(this.getClass().getName(),"SAML Init DONE" );
 		} catch (final InitializationException e) {
-
 			throw new RuntimeException( "Initialization failed", e );
 		} finally {
-
-			if (null != loader) {
-
-				thread.setContextClassLoader(loader);
-			}
+		    Thread.currentThread().setContextClassLoader(threadLoader);
 		}
 
-		System.out.println("Setting basic parser pool");
+		Logger.info(this.getClass().getName(),"Setting basic parser pool");
 
 		if (XMLObjectProviderRegistrySupport.getParserPool() == null ) {
-
 			XMLObjectProviderRegistrySupport.setParserPool(new BasicParserPool());
 		}
 
-		System.out.println("Doing instance of Java Crypto validator");
+		
 
-		try {
 
-			final JavaCryptoValidationInitializer javaCryptoValidationInitializer = new JavaCryptoValidationInitializer();
-			System.out.println("Initializing Java Crypto validator");
-			javaCryptoValidationInitializer.init();
-		} catch (final InitializationException initializationException) {
 
-			initializationException.printStackTrace();
-		} catch (final Exception e) {
-
-			e.printStackTrace();
-		}
-
-		System.out.println("Getting the Security Providers");
-		for (final Provider jceProvider : Security.getProviders()) {
-
-			System.out.println(jceProvider.getInfo());
-		}
 
 		initDone.set( true );
 	}

@@ -3,7 +3,7 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '20.12'
+version = '21.02.2'
 
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
@@ -14,7 +14,7 @@ configurations {
 dependencies {
 
 
-    compile  ('com.dotcms:dotcms:20.11.1') { transitive = false }
+    compile  ('com.dotcms:dotcms:21.02.2') { transitive = false }
     compile  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -36,7 +36,7 @@ dependencies {
     compile  (group: 'org.apache.servicemix.bundles', name:'org.apache.servicemix.bundles.opensaml', version:'3.3.1_1'){
         exclude(group: 'org.apache.velocity')
         exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
+
     }
     
     // the same as the compile jars without dotCMS
