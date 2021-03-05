@@ -13,7 +13,7 @@ configurations {
 }
 dependencies {
 
-
+    compile  ('io.vavr:vavr:0.9.3')
     compile  ('com.dotcms:dotcms:21.01') { transitive = false }
     compile  ('org.opensaml:opensaml-messaging-impl:3.3.1') { transitive = false }
     compile  ('commons-io:commons-io:2.8.0') { transitive = false }
@@ -22,10 +22,10 @@ dependencies {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    // the same as the compile jars without dotCMS
+ 
 
 
-
+    
     osgiLibs  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -59,7 +59,7 @@ dependencies {
 
     compileOnly ('org.apache.felix:org.apache.felix.main:5.6.10') { transitive = false }
     compileOnly ('javax.servlet:javax.servlet-api:3.1.0'){ transitive = false }
-
+    compileOnly ('org.slf4j:slf4j-api:1.7.12'){ transitive = false }
     testCompile 'junit:junit:4.12'
     
 }

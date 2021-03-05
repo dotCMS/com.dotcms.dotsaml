@@ -1,6 +1,7 @@
 package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.MessageObserver;
+import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import net.shibboleth.utilities.java.support.collection.Pair;
@@ -120,20 +121,26 @@ public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
     }
     
     
-    final static Lazy<String> redirectTemplate = Lazy.of(()->new StringWriter()
+    final static String redirectTemplate =
+                    new StringWriter()
                     .append("<html>")
                     .append("<head>")
-                    .append("<meta http-equiv=\"refresh\" content=\"0;URL='{{REDIRECT}}'\"/>")
+                    .append("<meta http-equiv=\"refresh\" content=\"0;URL='REDIRECT_ME'\"/>")
+                    .append("<style>p {font-family: Arial;font-size: 16px;color: #666;margin: 50px;text-align:center;opacity: 1;animation: fadeIn ease 5s;animation-iteration-count: 0;-webkit-animation: fadeIn ease 5s;}@keyframes fadeIn {0% {opacity:0;}100% {opacity:1;}}@-moz-keyframes fadeIn {0% {opacity:0;}100% {opacity:1;}}@-webkit-keyframes fadeIn {0% {opacity:0;}100% {opacity:1;}}@-o-keyframes fadeIn {0% {opacity:0;}100% {opacity:1;}@-ms-keyframes fadeIn {0% {opacity:0;}100% {opacity:1;}}</style>")
                     .append("</head>")
-                    .append("<body><p>Moved to <a href=\"{{REDIRECT}}\">{{REDIRECT}}</a>.</p></body>")
-                    .append("</html>").toString());
+                    .append("<body><p>If your browser does not refresh, click <a href=\"REDIRECT_ME\">Here</a>.</p></body>")
+                    .append("</html>")
+                    .toString();
     
     
     
-    public void sendRedirectHTML(HttpServletResponse response, String redirectUrl) {
+    public void sendRedirectHTML(HttpServletResponse response, final String redirectUrl) {
+        
+        final String finalTemplate = UtilMethods.replace(redirectTemplate,"REDIRECT_ME", redirectUrl);
+        
         response.setContentType("text/html");
         Try.run(() -> {
-            response.getWriter().write(redirectTemplate.get().replaceAll("{{REDIRECT}}", redirectUrl));
+            response.getWriter().write(finalTemplate);
             response.getWriter().flush();
         });
     }

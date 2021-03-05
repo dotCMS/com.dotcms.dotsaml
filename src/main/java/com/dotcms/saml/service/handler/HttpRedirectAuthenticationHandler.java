@@ -22,6 +22,7 @@ import org.opensaml.xmlsec.signature.support.SignatureConstants;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Implements the authentication handler by redirect
@@ -58,6 +59,8 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
+        HttpSession session = request.getSession();
+        session.setAttribute("dotsaml.login", true);
         this.setSignatureSigningParams(context, identityProviderConfiguration);
         this.doRedirect(context, response, authnRequest, identityProviderConfiguration);
     }
