@@ -1,6 +1,8 @@
 package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.MessageObserver;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import net.shibboleth.utilities.java.support.net.HttpServletSupport;
 import net.shibboleth.utilities.java.support.net.URLBuilder;
@@ -16,6 +18,7 @@ import org.opensaml.xmlsec.SignatureSigningParameters;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -110,14 +113,29 @@ public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
 
         HttpServletResponse response = getHttpServletResponse();
         HttpServletSupport.addNoCacheHeaders(response);
-        HttpServletSupport.setUTF8Encoding(response);
 
-        try {
-            response.sendRedirect(redirectURL);
-            this.messageObserver.updateInfo(this.getClass().getName(), "Doing a Redirect deflate");
-        } catch (IOException e) {
-            throw new MessageEncodingException("Problem sending HTTP redirect", e);
-        }
+        sendRedirectHTML(response, redirectURL);
+        this.messageObserver.updateInfo(this.getClass().getName(), "Doing a Redirect deflate");
+
     }
-
+    
+    
+    final static Lazy<String> redirectTemplate = Lazy.of(()->new StringWriter()
+                    .append("<html>")
+                    .append("<head>")
+                    .append("<meta http-equiv=\"refresh\" content=\"0;URL='{{REDIRECT}}'\"/>")
+                    .append("</head>")
+                    .append("<body><p>Moved to <a href=\"{{REDIRECT}}\">{{REDIRECT}}</a>.</p></body>")
+                    .append("</html>").toString());
+    
+    
+    
+    public void sendRedirectHTML(HttpServletResponse response, String redirectUrl) {
+        response.setContentType("text/html");
+        Try.run(() -> {
+            response.getWriter().write(redirectTemplate.get().replaceAll("{{REDIRECT}}", redirectUrl));
+            response.getWriter().flush();
+        });
+    }
+    
 }
