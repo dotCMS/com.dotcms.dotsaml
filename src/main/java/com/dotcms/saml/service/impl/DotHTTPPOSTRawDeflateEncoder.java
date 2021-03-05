@@ -154,18 +154,21 @@ public class DotHTTPPOSTRawDeflateEncoder  implements HttpServletResponseMessage
         final Element domMessage = this.marshallMessage(outboundMessage);
 
         String relayState;
+        String messageXML;
+        String encodedMessage;
         String encodedRelayState;
+
         try {
-            relayState        = SerializeSupport.nodeToString(domMessage);
-            encodedRelayState = Base64Support.encode(relayState.getBytes("UTF-8"), false);
+            messageXML        = SerializeSupport.nodeToString(domMessage);
+            encodedMessage    = Base64Support.encode(messageXML.getBytes("UTF-8"), Base64Support.UNCHUNKED);
             if (outboundMessage instanceof RequestAbstractType) {
-                context.put("SAMLRequest", encodedRelayState);
+                context.put("SAMLRequest", "<input type=\"hidden\" name=\"SAMLRequest\" value=\""+encodedMessage+"\"/>");
             } else {
                 if (!(outboundMessage instanceof StatusResponseType)) {
                     throw new MessageEncodingException("SAML message is neither a SAML RequestAbstractType or StatusResponseType");
                 }
 
-                context.put("SAMLResponse", encodedRelayState);
+                context.put("SAMLResponse", "<input type=\"hidden\" name=\"SAMLResponse\" value=\""+encodedMessage+"\"/>");
             }
         } catch (UnsupportedEncodingException var9) {
             this.messageObserver.updateError(this.getClass().getName(),"UTF-8 encoding is not supported, this VM is not Java compliant.");
@@ -177,7 +180,7 @@ public class DotHTTPPOSTRawDeflateEncoder  implements HttpServletResponseMessage
             encodedRelayState = HTMLEncoder.encodeForHTMLAttribute(relayState);
             this.messageObserver.updateDebug(this.getClass().getName(),
             "Setting RelayState parameter to: '" + relayState + "' , encoded as '" +  encodedRelayState+ "' ");
-            context.put("RelayState", encodedRelayState);
+            context.put("RelayState", "<input type=\"hidden\" name=\"SAMLResponse\" value=\""+encodedRelayState+"\"/>");
         }
     }
 

@@ -46,6 +46,7 @@ public class AuthenticationResolverHandlerFactory implements Serializable {
 		final String authenticationProtocolBinding = this.samlConfigurationService.getConfigAsString(idpConfig,
 				SamlName.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING, ()->DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_REDIRECT);
 
+		this.messageObserver.updateInfo(this.getClass().getName(), "Using authentication handler: " + authenticationProtocolBinding);
 		switch (authenticationProtocolBinding) {
 
 			case DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_REDIRECT:
