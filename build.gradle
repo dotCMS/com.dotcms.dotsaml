@@ -15,6 +15,7 @@ dependencies {
 
 
     compile  ('com.dotcms:dotcms:21.02.2') { transitive = false }
+    compile  ('io.vavr:vavr:0.9.3')
     compile  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     compile  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
