@@ -33,7 +33,7 @@ public class Activator extends GenericBundleActivator {
         final Map<String, Object> contextMap = new HashMap<>();
         final Initializer initializer = new SamlInitializer();
         
-        InitializationService.initialize();
+
         
         initializer.init(contextMap);
 

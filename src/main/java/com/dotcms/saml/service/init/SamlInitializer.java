@@ -36,25 +36,15 @@ public class SamlInitializer implements Initializer {
 		try {
 			Thread.currentThread().setContextClassLoader(InitializationService.class.getClassLoader());
 
-			Logger.info(this.getClass().getName(),"Initializing SAML..." );
+			Logger.info(this.getClass().getName(),"SAML Init STARTED..." );
 			
-			new org.opensaml.core.metrics.impl.MetricRegistryInitializer().init();
-			new org.opensaml.xacml.profile.saml.config.XMLObjectProviderInitializer().init();
-			new org.opensaml.xacml.config.XMLObjectProviderInitializer().init();
-			new org.opensaml.saml.config.XMLObjectProviderInitializer().init();
-			new org.opensaml.saml.config.SAMLConfigurationInitializer().init();
-			new org.opensaml.core.xml.config.XMLObjectProviderInitializer().init();
-			new org.opensaml.xmlsec.config.XMLObjectProviderInitializer().init();
-			new org.opensaml.security.config.ClientTLSValidationConfiguratonInitializer().init();
-			new org.opensaml.xmlsec.config.GlobalAlgorithmRegistryInitializer().init();
-			new org.opensaml.xmlsec.config.ApacheXMLSecurityInitializer().init();
-			new org.opensaml.xmlsec.config.GlobalSecurityConfigurationInitializer().init();
+	        InitializationService.initialize();
 			new org.opensaml.xmlsec.config.JavaCryptoValidationInitializer().init();
 
 			Logger.info(this.getClass().getName(),"Doing instance of Java Crypto validator");
 			Logger.info(this.getClass().getName(),"Getting the Security Providers");
 	        for (final Provider jceProvider : Security.getProviders()) {
-	            Logger.info(this.getClass().getName(),"-" + jceProvider.getInfo());
+	            Logger.info(this.getClass().getName(),"- " + jceProvider.getInfo());
 	        }
 			
 	        Logger.info(this.getClass().getName(),"SAML Init DONE" );

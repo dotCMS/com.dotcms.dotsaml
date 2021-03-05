@@ -41,6 +41,7 @@ dependencies {
     }
     
     // the same as the compile jars without dotCMS
+    /*
     osgiLibs  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -54,10 +55,11 @@ dependencies {
     osgiLibs  ('org.opensaml:opensaml-xacml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-xacml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-xacml-saml-impl:3.3.1') { transitive = false }
-    osgiLibs  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-impl:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-soap-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-soap-impl:3.3.1') { transitive = false }
+    */
+    osgiLibs  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
     osgiLibs  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1'){
         exclude(group: 'org.apache.velocity')
         exclude(group: 'commons-logging')
