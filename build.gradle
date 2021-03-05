@@ -3,7 +3,7 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '21.02.2'
+version = '22.02'
 
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
@@ -14,34 +14,18 @@ configurations {
 dependencies {
 
 
-    compile  ('com.dotcms:dotcms:21.02.2') { transitive = false }
-    compile  ('io.vavr:vavr:0.9.3')
-    compile  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-xmlsec-impl:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-xmlsec-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-security-impl:3.3.1') { transitive = false }
+    compile  ('com.dotcms:dotcms:21.01') { transitive = false }
     compile  ('org.opensaml:opensaml-messaging-impl:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-messaging-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-storage-impl:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-storage-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-xacml-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-xacml-saml-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-xacml-saml-impl:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-saml-impl:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-soap-api:3.3.1') { transitive = false }
-    compile  ('org.opensaml:opensaml-soap-impl:3.3.1') { transitive = false }
-    compile  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
     compile  ('commons-io:commons-io:2.8.0') { transitive = false }
-    compile  (group: 'org.apache.servicemix.bundles', name:'org.apache.servicemix.bundles.opensaml', version:'3.3.1_1'){
+    compile  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1'){
         exclude(group: 'org.apache.velocity')
         exclude(group: 'commons-logging')
-
+        exclude(group: 'org.slf4j')
     }
-    
     // the same as the compile jars without dotCMS
-    /*
+
+
+
     osgiLibs  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -55,16 +39,23 @@ dependencies {
     osgiLibs  ('org.opensaml:opensaml-xacml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-xacml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-xacml-saml-impl:3.3.1') { transitive = false }
+    osgiLibs  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-impl:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-soap-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-soap-impl:3.3.1') { transitive = false }
-    */
-    osgiLibs  ('org.glassfish.jersey.media:jersey-media-jaxb:2.22.1') { transitive = false }
-    osgiLibs  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1'){
-        exclude(group: 'org.apache.velocity')
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
+    
+    osgiLibs ('joda-time:joda-time:2.9') { transitive = false }
+    osgiLibs ('io.dropwizard.metrics:metrics-core:3.1.2') { transitive = false }
+    osgiLibs ('net.shibboleth.utilities:java-support:7.3.0') { transitive = false }
+    osgiLibs ('org.apache.santuario:xmlsec:2.0.5') { transitive = false }
+    osgiLibs ('org.codehaus.woodstox:woodstox-core-asl:4.4.1') { transitive = false }
+    osgiLibs ('javax.xml.stream:stax-api:1.0-2') { transitive = false }
+    osgiLibs ('org.codehaus.woodstox:stax2-api:3.1.4') { transitive = false }
+    osgiLibs ('org.codehaus.woodstox:woodstox-core-asl:4.4.1') { transitive = false }
+    osgiLibs ('org.cryptacular:cryptacular:1.1.1') { transitive = false }
+    osgiLibs ('org.bouncycastle:bcprov-jdk15on:1.54') { transitive = false }
+    osgiLibs ('com.google.code.findbugs:jsr305:3.0.1'){ transitive = false }
+
 
     compileOnly ('org.apache.felix:org.apache.felix.main:5.6.10') { transitive = false }
     compileOnly ('javax.servlet:javax.servlet-api:3.1.0'){ transitive = false }
@@ -88,7 +79,6 @@ jar {
                 'Bundle-ClassPath' : "${classPathLibraries()}",
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
-                    !com.google.common.*,
                     !org.opensaml.*,
                     
                     *;version=0.1
