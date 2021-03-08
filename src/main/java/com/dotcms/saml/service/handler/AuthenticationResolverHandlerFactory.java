@@ -46,12 +46,15 @@ public class AuthenticationResolverHandlerFactory implements Serializable {
 		final String authenticationProtocolBinding = this.samlConfigurationService.getConfigAsString(idpConfig,
 				SamlName.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING, ()->DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_REDIRECT);
 
+		this.messageObserver.updateInfo(this.getClass().getName(), "Using authentication handler: " + authenticationProtocolBinding);
 		switch (authenticationProtocolBinding) {
 
 			case DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_REDIRECT:
 				return new HttpRedirectAuthenticationHandler(this.samlCoreService, this.messageObserver, this.samlConfigurationService);
 			case DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_POST:
 				return new HttpPOSTAuthenticationHandler(this.samlCoreService, this.velocityEngine, this.messageObserver);
+			case "Http-POST-Raw":  // todo: change this on new core change
+				return new HttpPOSTRawAuthenticationHandler(this.samlCoreService, this.messageObserver);
 		}
 
 		return new HttpRedirectAuthenticationHandler(this.samlCoreService, this.messageObserver, this.samlConfigurationService);
