@@ -14,6 +14,7 @@ import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.EncryptedAssertionDecrypter;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotcms.saml.utils.SignatureUtils;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
@@ -668,14 +669,23 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			try {
 
 				SignatureValidator.validate(assertion.getSignature(), credential);
-
 				return;
 			} catch (SignatureException ignore) {
 
-				this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Signature Validation failed with provided credential (ignore?): " +
-						ignore.getMessage());
+				try {
+
+					SignatureUtils.validate(assertion.getSignature(), credential);
+					return;
+				} catch (SignatureException ignoreToo) {
+
+					this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
+							"Signature Validation failed with provided credential (ignore?): " +
+							ignore.getMessage());
+				}
 			}
 		}
+
+
 
 		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Couldn't find any valid credential to validate the assertion signature");
 		throw new SignatureException("Assertion Signature cannot be validated");
@@ -770,7 +780,12 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
 
-					SignatureValidator.validate(assertion.getSignature(), getIdPCredentials(identityProviderConfiguration));
+					final Credential credential = getIdPCredentials(identityProviderConfiguration);
+					try {
+						SignatureValidator.validate(assertion.getSignature(), credential);
+					} catch (SignatureException e) {
+						SignatureUtils.validate(assertion.getSignature(), credential);
+					}
 
 					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
 				}

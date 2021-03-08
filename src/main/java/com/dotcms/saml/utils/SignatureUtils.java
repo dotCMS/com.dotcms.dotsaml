@@ -1,8 +1,9 @@
 package com.dotcms.saml.utils;
 
-import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
@@ -10,23 +11,61 @@ import org.opensaml.core.xml.io.MarshallingException;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xml.util.Base64;
 import org.opensaml.xmlsec.SignatureSigningParameters;
 import org.opensaml.xmlsec.context.SecurityParametersContext;
 import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.X509Certificate;
 import org.opensaml.xmlsec.signature.X509Data;
-import org.opensaml.xml.util.Base64;
 import org.opensaml.xmlsec.signature.support.ConfigurableContentReference;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
 import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignerProviderImpl;
+
+import javax.annotation.Nonnull;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 /**
  * Signature utils
  * @author jsanca
  */
 public class SignatureUtils {
+
+    private static SignatureValidationProvider validatorInstance;
+
+    public static void init () {
+
+        Try.run(()->getSignatureValidationProvider()).onFailure(throwable ->
+                Logger.error(SignatureUtils.class.getName(), throwable.getMessage()));
+    }
+
+    public static void validate(final Signature signature, final Credential validationCredential) throws SignatureException {
+
+        final SignatureValidationProvider validator = getSignatureValidationProvider();
+        Logger.debug(SignatureUtils.class.getName(),
+                "Using a validation provider of implementation: " + validator.getClass().getName());
+        validator.validate(signature, validationCredential);
+    }
+
+    private static SignatureValidationProvider getSignatureValidationProvider() throws SignatureException {
+
+        if (validatorInstance == null) {
+
+            final ServiceLoader<SignatureValidationProvider> loader = ServiceLoader.load(SignatureValidationProvider.class);
+            final Iterator<SignatureValidationProvider> iterator = loader.iterator();
+            if (!iterator.hasNext()) {
+
+                throw new SignatureException("Could not load a signature validation provider implementation via service API");
+            }
+
+            validatorInstance = iterator.next();
+        }
+
+        return validatorInstance;
+    }
 
     /**
      *

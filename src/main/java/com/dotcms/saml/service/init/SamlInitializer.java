@@ -1,5 +1,6 @@
 package com.dotcms.saml.service.init;
 
+import com.dotcms.saml.utils.SignatureUtils;
 import net.shibboleth.utilities.java.support.xml.BasicParserPool;
 import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
@@ -46,7 +47,10 @@ public class SamlInitializer implements Initializer {
 	        for (final Provider jceProvider : Security.getProviders()) {
 	            Logger.info(this.getClass().getName(),"- " + jceProvider.getInfo());
 	        }
-			
+
+			Logger.info(this.getClass().getName(),"Doing Init of SignatureValidationProvider" );
+			SignatureUtils.init();
+
 	        Logger.info(this.getClass().getName(),"SAML Init DONE" );
 		} catch (final InitializationException e) {
 			throw new RuntimeException( "Initialization failed", e );
