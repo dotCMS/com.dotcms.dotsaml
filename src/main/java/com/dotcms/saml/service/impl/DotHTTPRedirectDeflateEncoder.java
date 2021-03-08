@@ -2,7 +2,6 @@ package com.dotcms.saml.service.impl;
 
 import com.dotcms.saml.MessageObserver;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import net.shibboleth.utilities.java.support.collection.Pair;
 import net.shibboleth.utilities.java.support.net.HttpServletSupport;
@@ -18,7 +17,6 @@ import org.opensaml.saml.saml2.core.StatusResponseType;
 import org.opensaml.xmlsec.SignatureSigningParameters;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.List;

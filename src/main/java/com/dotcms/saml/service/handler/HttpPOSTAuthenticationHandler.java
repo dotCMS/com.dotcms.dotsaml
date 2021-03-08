@@ -6,6 +6,7 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPPOSTDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotcms.saml.utils.SignatureUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.velocity.app.VelocityEngine;
 import org.opensaml.core.xml.XMLObject;
@@ -16,8 +17,8 @@ import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.binding.encoding.impl.HTTPPostEncoder;
 import org.opensaml.saml.saml2.core.AuthnRequest;
-import org.opensaml.xmlsec.SignatureSigningParameters;
-import org.opensaml.xmlsec.context.SecurityParametersContext;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 
 import javax.servlet.http.HttpServletRequest;
@@ -43,10 +44,33 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
     }
 
     @Override
-    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration idpConfig) {
+    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration identityProviderConfiguration) {
 
         final MessageContext context    = new MessageContext(); // main context
-        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, idpConfig, SAMLConstants.SAML2_POST_BINDING_URI);
+        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
+
+        final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.request").toString()): false;
+
+        if (needSign) {
+
+            try {
+
+                final Signature signature = this.createSignature(identityProviderConfiguration);
+
+                this.messageObserver.updateInfo(this.getClass().getName(), "signature: " + signature);
+                authnRequest.setSignature(signature);
+
+                // Marshall and Sign
+                final String digestAlgorithm = identityProviderConfiguration.containsOptionalProperty("auth.signature.reference.digestmethod.algorithm") ?
+                        (String) identityProviderConfiguration.getOptionalProperty("auth.signature.reference.digestmethod.algorithm") :
+                        SignatureConstants.ALGO_ID_DIGEST_SHA256;
+                SignatureUtils.marshalAndSing(authnRequest, this.messageObserver, signature, digestAlgorithm);
+            } catch (Exception e) {
+
+                this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
+            }
+        }
 
         context.setMessage(authnRequest);
 
@@ -55,21 +79,24 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
         // info about the endpoint of the peer entity
         final SAMLEndpointContext endpointContext     = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
 
-        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(idpConfig));
+        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
-        this.setSignatureSigningParams(context, idpConfig);
-        this.doPost(context, response, authnRequest, idpConfig);
+        final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
+        if (needSignatureSigningParams) {
+            SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
+        }
+
+        this.doPost(context, response, authnRequest, identityProviderConfiguration);
     }
 
-    private void setSignatureSigningParams(final MessageContext context, final IdentityProviderConfiguration idpConfig) {
+    private Signature createSignature(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
+        final X509Credential credential     = (X509Credential) this.samlCoreService.getCredential(identityProviderConfiguration);
+        final String signatureAlgorithm = identityProviderConfiguration.containsOptionalProperty("auth.signature.algorithm")?
+                (String)identityProviderConfiguration.getOptionalProperty("auth.signature.algorithm"):SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
 
-        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(idpConfig));
-        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-
-        context.getSubcontext(SecurityParametersContext.class, true)
-                .setSignatureSigningParameters(signatureSigningParameters);
+        return SignatureUtils.createSignature(this.samlCoreService, this.messageObserver, credential, signatureAlgorithm);
     }
 
     // this makes the post to the IdP

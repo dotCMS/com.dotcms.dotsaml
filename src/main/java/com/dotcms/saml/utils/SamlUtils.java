@@ -4,11 +4,15 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.SamlCoreServiceImpl;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
+import net.shibboleth.utilities.java.support.xml.QNameSupport;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.core.xml.io.Marshaller;
 import org.opensaml.core.xml.io.MarshallerFactory;
 import org.opensaml.core.xml.io.MarshallingException;
+import org.opensaml.core.xml.io.Unmarshaller;
+import org.opensaml.core.xml.io.UnmarshallerFactory;
+import org.opensaml.core.xml.io.UnmarshallingException;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.handler.MessageHandlerException;
 import org.opensaml.messaging.handler.impl.BasicMessageHandlerChain;
@@ -31,6 +35,7 @@ import java.util.logging.Logger;
  */
 public class SamlUtils {
 
+    private static final UnmarshallerFactory                unmarshallerFactory     = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
     private static final MarshallerFactory                  marshallerFactory       = XMLObjectProviderRegistrySupport.getMarshallerFactory();
     private static final RandomIdentifierGenerationStrategy secureRandomIdGenerator = new RandomIdentifierGenerationStrategy();
 
@@ -89,6 +94,29 @@ public class SamlUtils {
         }
 
         return xmlString;
+    }
+
+    public static XMLObject toXMLObject (final Element element) throws UnmarshallingException {
+
+        Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
+        if (unmarshaller == null) {
+
+            unmarshaller = unmarshallerFactory.getUnmarshaller(
+                    XMLObjectProviderRegistrySupport.getDefaultProviderQName());
+
+            if (unmarshaller == null) {
+
+                final String errorMsg = "No unmarshaller available for " + QNameSupport.getNodeQName(element);
+                Logger.getLogger(SamlCoreServiceImpl.class.getName()).log(Level.SEVERE, errorMsg);
+                throw new UnmarshallingException(errorMsg);
+            } else {
+
+                Logger.getLogger(SamlCoreServiceImpl.class.getName()).log(Level.SEVERE,"No unmarshaller was registered for {}. Using default unmarshaller.",
+                        QNameSupport.getNodeQName(element));
+            }
+        }
+
+        return unmarshaller.unmarshall(element);
     }
 
     public static Element toElement(final XMLObject object) {

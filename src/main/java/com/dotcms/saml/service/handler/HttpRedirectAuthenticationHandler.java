@@ -8,6 +8,7 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPRedirectDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotcms.saml.utils.SignatureUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.messaging.context.MessageContext;
@@ -16,8 +17,8 @@ import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
 import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.saml2.binding.encoding.impl.HTTPRedirectDeflateEncoder;
 import org.opensaml.saml.saml2.core.AuthnRequest;
-import org.opensaml.xmlsec.SignatureSigningParameters;
-import org.opensaml.xmlsec.context.SecurityParametersContext;
+import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,6 +51,29 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration);
 
+        final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.request").toString()): false;
+
+        if (needSign) {
+
+            try {
+
+                final Signature signature = this.createSignature(identityProviderConfiguration);
+
+                this.messageObserver.updateInfo(this.getClass().getName(), "signature: " + signature);
+                authnRequest.setSignature(signature);
+
+                // Marshall and Sign
+                final String digestAlgorithm = identityProviderConfiguration.containsOptionalProperty("auth.signature.reference.digestmethod.algorithm") ?
+                        (String) identityProviderConfiguration.getOptionalProperty("auth.signature.reference.digestmethod.algorithm") :
+                        SignatureConstants.ALGO_ID_DIGEST_SHA256;
+                SignatureUtils.marshalAndSing(authnRequest, this.messageObserver, signature, digestAlgorithm);
+            } catch (Exception e) {
+
+                this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
+            }
+        }
+
         context.setMessage(authnRequest);
 
         // peer entity (Idp to SP and viceversa)
@@ -59,23 +83,23 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
-        HttpSession session = request.getSession();
+        final HttpSession session = request.getSession();
         session.setAttribute("dotsaml.login", true);
-        this.setSignatureSigningParams(context, identityProviderConfiguration);
+        final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
+        if (needSignatureSigningParams) {
+            SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
+        }
         this.doRedirect(context, response, authnRequest, identityProviderConfiguration);
     }
 
-    @SuppressWarnings("rawtypes")
-    protected void setSignatureSigningParams(final MessageContext context,
-                                             final IdentityProviderConfiguration identityProviderConfiguration) {
+    private Signature createSignature(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
+        final X509Credential credential     = (X509Credential) this.samlCoreService.getCredential(identityProviderConfiguration);
+        final String signatureAlgorithm = identityProviderConfiguration.containsOptionalProperty("auth.signature.algorithm")?
+                (String)identityProviderConfiguration.getOptionalProperty("auth.signature.algorithm"):SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256;
 
-        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(identityProviderConfiguration));
-        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-
-        context.getSubcontext(SecurityParametersContext.class, true)
-                .setSignatureSigningParameters(signatureSigningParameters);
+        return SignatureUtils.createSignature(this.samlCoreService, this.messageObserver, credential, signatureAlgorithm);
     }
 
     // this makes the redirect to the IdP
@@ -110,5 +134,4 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
             throw new SamlException(errorMsg, e);
         }
     }
-
 }

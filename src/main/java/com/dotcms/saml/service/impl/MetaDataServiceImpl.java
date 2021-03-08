@@ -15,6 +15,7 @@ import java.io.CharArrayReader;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * This service provides the encapsulation to interact with the SP and IDP metadata.
@@ -83,7 +84,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
 		final MetaData metadataBean = getMetaData(identityProviderConfiguration);
 
-		return null != metadataBean? metadataBean.getCredentialSigningList() : null;
+		return null != metadataBean? metadataBean.getCredentialSigningList() : Collections.emptyList();
 	}
 
 	/**

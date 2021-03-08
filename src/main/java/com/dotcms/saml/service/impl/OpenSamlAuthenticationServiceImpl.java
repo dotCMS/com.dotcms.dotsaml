@@ -146,54 +146,6 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         logoutHandler.handle(request, response, nameID, sessionIndexValue, identityProviderConfiguration);
     }
 
-    @SuppressWarnings("rawtypes")
-    protected void setSignatureSigningParams(final MessageContext context,
-                                             final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        final SignatureSigningParameters signatureSigningParameters = new SignatureSigningParameters();
-
-        signatureSigningParameters.setSigningCredential(this.samlCoreService.getCredential(identityProviderConfiguration));
-        signatureSigningParameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
-
-        context.getSubcontext(SecurityParametersContext.class, true)
-                .setSignatureSigningParameters(signatureSigningParameters);
-    }
-
-    // this makes the redirect to the IdP
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    protected void doRedirect(final MessageContext context, final HttpServletResponse response,
-                              final XMLObject xmlObject,
-                              final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        final boolean clearQueryParams = samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
-                SamlName.DOTCMS_SAML_CLEAR_LOCATION_QUERY_PARAMS);
-
-        try {
-
-            final HTTPRedirectDeflateEncoder encoder = new DotHTTPRedirectDeflateEncoder(
-                    clearQueryParams, this.messageObserver);
-
-            encoder.setMessageContext(context);
-            encoder.setHttpServletResponse(response);
-
-            encoder.initialize();
-
-            this.messageObserver.updateDebug(this.getClass().getName(), "Printing XMLObject:");
-            this.messageObserver.updateDebug(this.getClass().getName(), "\n\n" + SamlUtils.toXMLObjectString(xmlObject));
-            this.messageObserver.updateDebug(this.getClass().getName(), "Redirecting to IdP '" + identityProviderConfiguration.getIdpName() + "'");
-
-            response.setHeader("Access-Control-Allow-Origin", "*");
-            encoder.encode();
-
-            this.messageObserver.updateDebug(this.getClass().getName(), "Redirect to IdP '" + identityProviderConfiguration.getIdpName() + "' DONE");
-        } catch (ComponentInitializationException | MessageEncodingException e) {
-
-            final String errorMsg = "An error occurred when executing redirect to IdP '" +
-                    identityProviderConfiguration.getIdpName() + "': " + e.getMessage();
-            this.messageObserver.updateError(this.getClass().getName(), errorMsg, e);
-            throw new SamlException(errorMsg, e);
-        }
-    }
 
     @Override
     public Attributes resolveAttributes(final HttpServletRequest  request,
