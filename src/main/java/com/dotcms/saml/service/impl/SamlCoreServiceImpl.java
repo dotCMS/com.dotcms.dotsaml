@@ -740,6 +740,9 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		// Here on out we are checking signature
 		try {
 
+			// this avoids the:  Apache xmlsec IdResolver could not resolve the Element for id reference: xxx
+			assertion.getDOM().setIdAttribute("ID", true);
+
 			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
 
 				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
