@@ -51,7 +51,7 @@ public class HttpPOSTRawAuthenticationHandler implements AuthenticationHandler {
         final SAMLEndpointContext endpointContext     = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(idpConfig));
-
+        // TODO: ADD LOGIC FOR needSign
         this.setSignatureSigningParams(context, idpConfig);
         this.doPost(context, response, authnRequest, idpConfig);
     }
