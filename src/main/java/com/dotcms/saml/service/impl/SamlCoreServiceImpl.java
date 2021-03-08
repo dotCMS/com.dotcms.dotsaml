@@ -712,8 +712,14 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 				return;
 			} catch (SignatureException ignore) {
 
-				this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
-						"Signature Validation failed with provided credential(s): " + ignore.getMessage());
+				try {
+
+					SignatureUtils.validate(response.getSignature(), credential);
+					return;
+				} catch (SignatureException ignoreToo) {
+					this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
+							"Signature Validation failed with provided credential(s): " + ignore.getMessage());
+				}
 			}
 		}
 
@@ -856,7 +862,12 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
 
-					SignatureValidator.validate(response.getSignature(), this.getIdPCredentials(identityProviderConfiguration));
+					final Credential credential = getIdPCredentials(identityProviderConfiguration);
+					try {
+						SignatureValidator.validate(response.getSignature(), credential);
+					} catch (SignatureException e) {
+						SignatureUtils.validate(response.getSignature(), credential);
+					}
 
 					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
 				}
