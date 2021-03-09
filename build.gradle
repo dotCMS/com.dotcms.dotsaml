@@ -15,9 +15,8 @@ dependencies {
 
     compile  ('io.vavr:vavr:0.9.3')
     compile  ('com.dotcms:dotcms:21.01') { transitive = false }
-    compile  ('org.opensaml:opensaml-messaging-impl:3.3.1') { transitive = false }
     compile  ('commons-io:commons-io:2.8.0') { transitive = false }
-    compile  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1'){
+    compile  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.4.6_1'){
         exclude(group: 'org.apache.velocity')
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
@@ -25,7 +24,12 @@ dependencies {
 
 
 
-
+    osgiLibs  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.4.6_1'){
+        exclude(group: 'org.apache.velocity')
+        exclude(group: 'commons-logging')
+        exclude(group: 'org.slf4j')
+    }
+    /*
     osgiLibs  ('org.opensaml:opensaml-core:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-saml-api:3.3.1') { transitive = false }
     osgiLibs  ('org.opensaml:opensaml-security-api:3.3.1') { transitive = false }
@@ -55,7 +59,7 @@ dependencies {
     osgiLibs ('org.cryptacular:cryptacular:1.1.1') { transitive = false }
     osgiLibs ('org.bouncycastle:bcprov-jdk15on:1.54') { transitive = false }
     osgiLibs ('com.google.code.findbugs:jsr305:3.0.1'){ transitive = false }
-
+    */
 
     compileOnly ('org.apache.felix:org.apache.felix.main:5.6.10') { transitive = false }
     compileOnly ('javax.servlet:javax.servlet-api:3.1.0'){ transitive = false }
