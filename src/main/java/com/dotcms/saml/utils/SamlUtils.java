@@ -14,8 +14,8 @@ import org.opensaml.core.xml.io.Unmarshaller;
 import org.opensaml.core.xml.io.UnmarshallerFactory;
 import org.opensaml.core.xml.io.UnmarshallingException;
 import org.opensaml.messaging.context.MessageContext;
+import org.opensaml.messaging.handler.MessageHandler;
 import org.opensaml.messaging.handler.MessageHandlerException;
-import org.opensaml.messaging.handler.impl.BasicMessageHandlerChain;
 import org.opensaml.saml.common.SignableSAMLObject;
 import org.w3c.dom.Element;
 
@@ -144,12 +144,12 @@ public class SamlUtils {
      * @param context
      *            MessageContext
      */
-    public static <T> void invokeMessageHandlerChain(final BasicMessageHandlerChain<T> handlerChain,
+    public static <T> void invokeMessageHandlerChain(final MessageHandler<T> handlerChain,
                                                      final MessageContext<T> context) {
         try {
 
             handlerChain.initialize();
-            handlerChain.doInvoke(context);
+            handlerChain.invoke(context);
         } catch (ComponentInitializationException | MessageHandlerException e) {
 
             throw new SamlException(e.getMessage(), e);

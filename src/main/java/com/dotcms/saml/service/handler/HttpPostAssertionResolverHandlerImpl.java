@@ -7,13 +7,16 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.utils.SamlUtils;
+import com.google.common.collect.ImmutableList;
+import io.vavr.control.Try;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.decoder.MessageDecodingException;
 import org.opensaml.messaging.handler.MessageHandler;
-import org.opensaml.messaging.handler.impl.BasicMessageHandlerChain;
+import org.opensaml.messaging.handler.MessageHandlerChain;
+import org.opensaml.messaging.handler.MessageHandlerException;
 import org.opensaml.saml.common.SAMLObject;
 import org.opensaml.saml.common.binding.security.impl.MessageLifetimeSecurityHandler;
 import org.opensaml.saml.common.messaging.context.SAMLMessageInfoContext;
@@ -166,23 +169,51 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 			this.messageObserver.updateInfo(this.getClass().getName(),
 					"Optional property not set: " + SamlName.DOT_SAML_MESSAGE_LIFE_TIME.getPropertyName() + ". Using default.");
 		}
-
+		
+        final MessageLifetimeSecurityHandler lifetimeSecurityHandler = new MessageLifetimeSecurityHandler();
+        // message lifetime validation.
+        lifetimeSecurityHandler.setClockSkew(clockSkew);
+        lifetimeSecurityHandler.setMessageLifetime(lifeTime);
+        lifetimeSecurityHandler.setRequiredRule(true);
+	      
+        final List<MessageHandler<SAMLObject>> handlers  = ImmutableList.<MessageHandler<SAMLObject>>of(lifetimeSecurityHandler);
+	        
 		final SAMLMessageInfoContext messageInfoContext = context.getSubcontext(SAMLMessageInfoContext.class, true);
-		final MessageLifetimeSecurityHandler lifetimeSecurityHandler = new MessageLifetimeSecurityHandler();
-		final BasicMessageHandlerChain<SAMLObject> handlerChain      = new BasicMessageHandlerChain<SAMLObject>();
-		final List<MessageHandler<SAMLObject>> handlers              = new ArrayList<>();
+
+		final MessageHandlerChain<SAMLObject> handlerChain      = new MessageHandlerChain<SAMLObject>() {
+            
+            @Override
+            public boolean isInitialized() {
+                
+                return handlers.stream().filter(h->!h.isInitialized()).findAny().isPresent();
+
+            }
+            
+            @Override
+            public void initialize() throws ComponentInitializationException {
+                for(MessageHandler<SAMLObject> handle:  handlers) {
+                    handle.initialize();
+                }
+                
+            }
+            
+            @Override
+            public void invoke(MessageContext<SAMLObject> messageContext) throws MessageHandlerException {
+               for(MessageHandler<SAMLObject> handle:  handlers) {
+                   handle.invoke(messageContext);
+               }
+
+            }
+            
+            @Override
+            public List<MessageHandler<SAMLObject>> getHandlers() {
+                return handlers;
+            }
+        };
+
 		final Response response = (Response) context.getMessage();
 		
 		messageInfoContext.setMessageIssueInstant(response.getIssueInstant());
-
-		// message lifetime validation.
-		lifetimeSecurityHandler.setClockSkew(clockSkew);
-		lifetimeSecurityHandler.setMessageLifetime(lifeTime);
-		lifetimeSecurityHandler.setRequiredRule(true);
-
-		// validation of message destination.
-		handlers.add(lifetimeSecurityHandler);
-		handlerChain.setHandlers(handlers);
 
 		SamlUtils.invokeMessageHandlerChain(handlerChain, context);
 	}

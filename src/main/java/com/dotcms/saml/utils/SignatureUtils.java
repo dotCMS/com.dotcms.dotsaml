@@ -22,8 +22,7 @@ import org.opensaml.xmlsec.signature.support.ConfigurableContentReference;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
-import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignerProviderImpl;
-
+import org.opensaml.xmlsec.signature.support.impl.provider.ApacheSantuarioSignerProviderImpl;
 import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.ServiceLoader;
