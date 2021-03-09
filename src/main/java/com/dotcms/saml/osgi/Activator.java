@@ -29,12 +29,9 @@ public class Activator extends GenericBundleActivator {
 
         System.out.println("SAML OSGI STARTING INIT.....");
 
-
         final Map<String, Object> contextMap = new HashMap<>();
         final Initializer initializer = new SamlInitializer();
-        
 
-        
         initializer.init(contextMap);
 
         final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
@@ -45,7 +42,6 @@ public class Activator extends GenericBundleActivator {
                         new Hashtable<>());
 
         System.out.println("SAML OSGI STARTED.....");
-
     }
 
 

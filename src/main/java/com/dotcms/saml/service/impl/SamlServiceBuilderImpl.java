@@ -17,8 +17,14 @@ import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.InstanceUtil;
+import com.dotcms.saml.utils.SignatureUtils;
+import com.dotmarketing.util.Logger;
 import org.apache.velocity.app.VelocityEngine;
+import org.opensaml.core.config.InitializationException;
+import org.opensaml.core.config.InitializationService;
 
+import java.security.Provider;
+import java.security.Security;
 import java.util.Collections;
 
 public class SamlServiceBuilderImpl implements SamlServiceBuilder {
@@ -41,6 +47,41 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
                                                                 final MessageObserver messageObserver,
                                                                 final SamlConfigurationService samlConfigurationService) {
 
+        SamlAuthenticationService samlAuthenticationService = null;
+        try {
+
+            samlAuthenticationService = this.createOpenSamlAuthenticationService(identityProviderConfigurationFactory,
+                    velocityEngine, messageObserver, samlConfigurationService);
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+
+            Logger.info(this.getClass().getName(), "Could not upload the SamlAuthenticationService: " + e.getMessage());
+
+            final ClassLoader  threadLoader = Thread.currentThread().getContextClassLoader();
+            Logger.info(this.getClass().getName(), "Current classloader: " + threadLoader);
+
+            try {
+
+                final ClassLoader  samlServiceBuilderThreadLoader = this.getClass().getClassLoader();
+                Logger.info(this.getClass().getName(), "Using temporally to init the SamlAuthenticationService classloader: " + samlServiceBuilderThreadLoader);
+                Thread.currentThread().setContextClassLoader(samlServiceBuilderThreadLoader);
+                try {
+                    samlAuthenticationService = this.createOpenSamlAuthenticationService(identityProviderConfigurationFactory,
+                            velocityEngine, messageObserver, samlConfigurationService);
+                } catch (ClassNotFoundException classNotFoundException) {
+                    Logger.error(this.getClass().getName(), e.getMessage(), e);
+                }
+            } finally {
+                Thread.currentThread().setContextClassLoader(threadLoader);
+            }
+        }
+
+        return samlAuthenticationService;
+    }
+
+    private OpenSamlAuthenticationServiceImpl createOpenSamlAuthenticationService(final IdentityProviderConfigurationFactory identityProviderConfigurationFactory,
+                                                                                  final VelocityEngine velocityEngine,
+                                                                                  final MessageObserver messageObserver,
+                                                                                  final SamlConfigurationService samlConfigurationService) throws ClassNotFoundException {
         if (null == this.initializer) {
             this.initFramework();
         }

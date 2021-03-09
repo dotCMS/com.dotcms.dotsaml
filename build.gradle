@@ -3,7 +3,7 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '21.03'
+version = '21.03.1'
 
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
@@ -48,7 +48,6 @@ dependencies {
     osgiLibs ('io.dropwizard.metrics:metrics-core:3.1.2') { transitive = false }
     osgiLibs ('net.shibboleth.utilities:java-support:7.3.0') { transitive = false }
     osgiLibs ('org.apache.santuario:xmlsec:2.0.5') { transitive = false }
-    osgiLibs ('org.codehaus.woodstox:woodstox-core-asl:4.4.1') { transitive = false }
     osgiLibs ('javax.xml.stream:stax-api:1.0-2') { transitive = false }
     osgiLibs ('org.codehaus.woodstox:stax2-api:3.1.4') { transitive = false }
     osgiLibs ('org.codehaus.woodstox:woodstox-core-asl:4.4.1') { transitive = false }
@@ -80,7 +79,7 @@ jar {
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
                     !org.opensaml.*,
-                    
+                    javax.annotation;version=0.0.0,
                     *;version=0.1
                 '''
         )
