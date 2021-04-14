@@ -61,7 +61,7 @@ public class Activator extends GenericBundleActivator {
         addSamlWebInterceptor();
 
 
-        Logger.info(this.getClass().getName(), "Adding the SAML Web Service");
+        Logger.info(this.getClass().getName(), "Adding the SAML Web Service: " + clazz.getName());
         RestServiceUtil.addResource(clazz);
 
         System.out.println("SAML OSGI STARTED.....");
