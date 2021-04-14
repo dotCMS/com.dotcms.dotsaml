@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
+import com.dotcms.rest.config.RestServiceUtil;
 import com.dotmarketing.filters.AutoLoginFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -34,6 +36,8 @@ public class Activator extends GenericBundleActivator {
 
     private String interceptorName;
 
+    private final Class clazz = DotSamlResource.class;
+
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
 
@@ -52,9 +56,13 @@ public class Activator extends GenericBundleActivator {
         this.samlServiceBuilder = context.registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
                         new Hashtable<>());
 
-        Logger.info(this.getClass().getName(), "Adding the SAML Filter");
+        Logger.info(this.getClass().getName(), "Adding the SAML Web Filter");
 
         addSamlWebInterceptor();
+
+
+        Logger.info(this.getClass().getName(), "Adding the SAML Web Service");
+        RestServiceUtil.addResource(clazz);
 
         System.out.println("SAML OSGI STARTED.....");
 
@@ -79,6 +87,11 @@ public class Activator extends GenericBundleActivator {
 
 
     public void stop(final BundleContext context) throws Exception {
+
+        Logger.info(this.getClass().getName(), "Removing the SAML Web Service");
+        RestServiceUtil.removeResource(clazz);
+
+        Logger.info(this.getClass().getName(), "Removing the SAML Web Filter");
 
         final FilterWebInterceptorProvider filterWebInterceptorProvider =
                 FilterWebInterceptorProvider.getInstance(Config.CONTEXT);
