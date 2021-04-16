@@ -9,6 +9,9 @@ import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.rest.config.RestServiceUtil;
+import com.dotcms.saml.DotSamlProxyFactory;
+import com.dotcms.security.apps.AppSecretSavedEvent;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.filters.AutoLoginFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -64,6 +67,12 @@ public class Activator extends GenericBundleActivator {
         Logger.info(this.getClass().getName(), "Adding the SAML Web Service: " + clazz.getName());
         RestServiceUtil.addResource(clazz);
 
+        Logger.info(this.getClass().getName(), "Subscribing to  AppSecretSavedEvent events");
+        Try.run (()-> APILocator.getLocalSystemEventsAPI().
+                subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance()))
+                .onFailure(e -> Logger.error(this.getClass().getName(), e.getMessage()));
+
+
         System.out.println("SAML OSGI STARTED.....");
 
     }
@@ -88,11 +97,15 @@ public class Activator extends GenericBundleActivator {
 
     public void stop(final BundleContext context) throws Exception {
 
+        Logger.info(this.getClass().getName(), "UnSubscribing to  AppSecretSavedEvent events.");
+        Try.run (()-> APILocator.getLocalSystemEventsAPI().
+                unsubscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance().getClass().getName()))
+                .onFailure(e -> Logger.error(this.getClass().getName(), e.getMessage()));
+
         Logger.info(this.getClass().getName(), "Removing the SAML Web Service");
         RestServiceUtil.removeResource(clazz);
 
         Logger.info(this.getClass().getName(), "Removing the SAML Web Filter");
-
         final FilterWebInterceptorProvider filterWebInterceptorProvider =
                 FilterWebInterceptorProvider.getInstance(Config.CONTEXT);
 
