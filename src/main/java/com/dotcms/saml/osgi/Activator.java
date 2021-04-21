@@ -41,10 +41,15 @@ public class Activator extends GenericBundleActivator {
 
     private final Class clazz = DotSamlResource.class;
 
+    private final String VERSION = "21.04";
+
+    private final long   buildNumber = 1;
+
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
 
         System.out.println("SAML OSGI STARTING INIT.....");
+        System.out.println("SAML version: " + VERSION + ", build number: " + buildNumber);
 
 
         final Map<String, Object> contextMap = new HashMap<>();

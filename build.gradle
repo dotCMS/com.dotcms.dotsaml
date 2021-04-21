@@ -80,7 +80,7 @@ jar {
                 'DynamicImport-Package': '*',
                 'Import-Package': '''
                     !org.opensaml.*,
-                    
+                    javax.annotation;version=0.0.0,
                     *;version=0.1
                 '''
         )
