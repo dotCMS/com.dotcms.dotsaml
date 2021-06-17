@@ -49,6 +49,18 @@ public class Activator extends GenericBundleActivator {
 
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
+
+        try {
+            activate(context);
+        }
+        catch(Exception e) {
+            System.setProperty(DOT_SAML_ACTIVATED, null);
+        }
+    }
+    
+    
+    private void activate(final BundleContext context) {
+        
         
         if(System.getProperty(DOT_SAML_ACTIVATED)!=null) {
             Logger.warn(this.getClass(), "dotSAML already activated, returning");
@@ -57,8 +69,8 @@ public class Activator extends GenericBundleActivator {
         
         synchronized (Config.class) {
 
-            if (null != System.getProperty(DOT_SAML_ACTIVATED)) {
-                Logger.warn(this.getClass().getName(), "dotSAML already activated, returning");
+            if(System.getProperty(DOT_SAML_ACTIVATED)!=null) {
+                Logger.warn(this.getClass(), "dotSAML already activated, returning");
                 return;
             }
             
