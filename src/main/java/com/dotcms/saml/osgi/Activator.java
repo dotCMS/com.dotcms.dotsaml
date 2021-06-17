@@ -37,9 +37,9 @@ public class Activator extends GenericBundleActivator {
     private ServiceRegistration samlServiceBuilder;
 
     private String interceptorName;
-
-    private final String DOT_SAML_STARTED = "DOT_SAML_STARTED";
-    private final String DOT_SAML_STOPPED = "DOT_SAML_STOPPED";
+    private final String DOT_SAML_STATE = "DOT_SAML_STATE";
+    private final String STARTED = "STARTED";
+    private final String STOPPED = "STOPPED";
 
     private final Class clazz = DotSamlResource.class;
 
@@ -54,7 +54,7 @@ public class Activator extends GenericBundleActivator {
             activate(context);
         } catch (Exception e) {
             Logger.warn(this.getClass().getName(), "dotSAML failed to activate:" + e.getMessage(), e);
-            System.setProperty(DOT_SAML_STARTED, DOT_SAML_STOPPED);
+            System.setProperty(DOT_SAML_STATE, STOPPED);
         }
     }
 
@@ -64,16 +64,15 @@ public class Activator extends GenericBundleActivator {
         Logger.warn(this.getClass().getName(), " ");
         Logger.warn(this.getClass().getName(), "dotSAML startlevel=" + bundleStartLevel.getStartLevel());
         Logger.warn(this.getClass().getName(), " ");
-        
-        
-        if (DOT_SAML_STARTED.equals(System.getProperty(DOT_SAML_STARTED))) {
+
+        if (STARTED.equals(System.getProperty(DOT_SAML_STATE))) {
             Logger.warn(this.getClass().getName(), "dotSAML already activated, returning");
             return;
         }
 
         synchronized (Config.class) {
 
-            if (DOT_SAML_STARTED.equals(System.getProperty(DOT_SAML_STARTED))) {
+            if (STARTED.equals(System.getProperty(DOT_SAML_STATE))) {
                 Logger.warn(this.getClass().getName(), "dotSAML already activated, returning");
                 return;
             }
@@ -107,7 +106,7 @@ public class Activator extends GenericBundleActivator {
 
             System.out.println("SAML OSGI STARTED.....");
 
-            System.setProperty(DOT_SAML_STARTED, "true");
+            System.setProperty(DOT_SAML_STATE, STARTED);
         }
     }
 
@@ -149,7 +148,7 @@ public class Activator extends GenericBundleActivator {
         // Unregister the registered services
         this.samlServiceBuilder.unregister();
 
-        System.setProperty(DOT_SAML_STARTED, DOT_SAML_STOPPED);
+        System.setProperty(DOT_SAML_STATE, STOPPED);
 
     }
 
