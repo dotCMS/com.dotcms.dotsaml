@@ -54,6 +54,7 @@ public class Activator extends GenericBundleActivator {
             activate(context);
         }
         catch(Exception e) {
+            Logger.warn(this.getClass(), "dotSAML failed to activate:" + e.getMessage(), e);
             System.setProperty(DOT_SAML_ACTIVATED, null);
         }
     }
