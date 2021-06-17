@@ -49,7 +49,16 @@ public class Activator extends GenericBundleActivator {
 
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
+        
+        BundleStartLevel bundleStartLevel = context.getBundle().adapt(BundleStartLevel.class);
+        
 
+        Logger.warn(this.getClass().getName(), " ");
+        Logger.warn(this.getClass().getName(), "dotSAML startlevel           = " + bundleStartLevel.getStartLevel());
+        Logger.warn(this.getClass().getName(), "dotSAML persistentlyStarted  = " + bundleStartLevel.isPersistentlyStarted());
+        Logger.warn(this.getClass().getName(), "dotSAML activationPolicyUsed = " + bundleStartLevel.isActivationPolicyUsed());
+        Logger.warn(this.getClass().getName(), " ");
+        
         try {
             activate(context);
         } catch (Exception e) {
@@ -60,10 +69,7 @@ public class Activator extends GenericBundleActivator {
 
     private void activate(final BundleContext context) {
 
-        BundleStartLevel bundleStartLevel = context.getBundle().adapt(BundleStartLevel.class);
-        Logger.warn(this.getClass().getName(), " ");
-        Logger.warn(this.getClass().getName(), "dotSAML startlevel=" + bundleStartLevel.getStartLevel());
-        Logger.warn(this.getClass().getName(), " ");
+
 
         if (STARTED.equals(System.getProperty(DOT_SAML_STATE))) {
             Logger.warn(this.getClass().getName(), "dotSAML already activated, returning");
