@@ -3,27 +3,25 @@ package com.dotcms.saml.osgi;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import com.dotcms.auth.providers.saml.v1.DotSamlResource;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.rest.config.RestServiceUtil;
 import com.dotcms.saml.DotSamlProxyFactory;
-import com.dotcms.security.apps.AppSecretSavedEvent;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.filters.AutoLoginFilter;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import io.vavr.control.Try;
-import org.opensaml.core.config.InitializationService;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import com.dotcms.saml.SamlServiceBuilder;
 import com.dotcms.saml.service.impl.SamlServiceBuilderImpl;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.init.SamlInitializer;
+import com.dotcms.security.apps.AppSecretSavedEvent;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.filters.AutoLoginFilter;
 import com.dotmarketing.osgi.GenericBundleActivator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 
 /**
  * This activator will register the {@link SamlServiceBuilder} this class will provide the main
@@ -38,6 +36,10 @@ public class Activator extends GenericBundleActivator {
     private ServiceRegistration samlServiceBuilder;
 
     private String interceptorName;
+    
+    
+    private final String DOT_SAML_ACTIVATED="DOT_SAML_ACTIVATED";
+    
 
     private final Class clazz = DotSamlResource.class;
 
@@ -47,40 +49,60 @@ public class Activator extends GenericBundleActivator {
 
     @SuppressWarnings("unchecked")
     public void start(final BundleContext context) throws Exception {
+        
+        if(System.getProperty(DOT_SAML_ACTIVATED)!=null) {
+            Logger.warn(this.getClass(), "dotSAML already activated, returning");
+            return;
+        }
+        
+        synchronized (Config.class) {
 
-        System.out.println("SAML OSGI STARTING INIT.....");
-        System.out.println("SAML version: " + VERSION + ", build number: " + buildNumber);
-
-
-        final Map<String, Object> contextMap = new HashMap<>();
-        final Initializer initializer = new SamlInitializer();
-
-        initializer.init(contextMap);
-
-        final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
-        samlServiceBuilderImpl.setInitializer(initializer);
-
-        // Register the TikaServiceBuilder as a OSGI service
-        this.samlServiceBuilder = context.registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
-                        new Hashtable<>());
-
-        Logger.info(this.getClass().getName(), "Adding the SAML Web Filter");
-
-        addSamlWebInterceptor();
-
-
-        Logger.info(this.getClass().getName(), "Adding the SAML Web Service: " + clazz.getName());
-        RestServiceUtil.addResource(clazz);
-
-        Logger.info(this.getClass().getName(), "Subscribing to  AppSecretSavedEvent events");
-        Try.run (()-> APILocator.getLocalSystemEventsAPI().
-                subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance()))
-                .onFailure(e -> Logger.error(this.getClass().getName(), e.getMessage()));
-
-
-        System.out.println("SAML OSGI STARTED.....");
-
+            if (null != System.getProperty(DOT_SAML_ACTIVATED)) {
+                Logger.warn(this.getClass().getName(), "dotSAML already activated, returning");
+                return;
+            }
+            
+            
+            
+            System.out.println("SAML OSGI STARTING INIT.....");
+            System.out.println("SAML version: " + VERSION + ", build number: " + buildNumber);
+    
+    
+            final Map<String, Object> contextMap = new HashMap<>();
+            final Initializer initializer = new SamlInitializer();
+    
+            initializer.init(contextMap);
+    
+            final SamlServiceBuilderImpl samlServiceBuilderImpl = new SamlServiceBuilderImpl();
+            samlServiceBuilderImpl.setInitializer(initializer);
+    
+            // Register the TikaServiceBuilder as a OSGI service
+            this.samlServiceBuilder = context.registerService(SamlServiceBuilder.class.getName(), samlServiceBuilderImpl,
+                            new Hashtable<>());
+    
+            Logger.info(this.getClass().getName(), "Adding the SAML Web Filter");
+    
+            addSamlWebInterceptor();
+    
+    
+            Logger.info(this.getClass().getName(), "Adding the SAML Web Service: " + clazz.getName());
+            RestServiceUtil.addResource(clazz);
+    
+            Logger.info(this.getClass().getName(), "Subscribing to  AppSecretSavedEvent events");
+            Try.run (()-> APILocator.getLocalSystemEventsAPI().
+                    subscribe(AppSecretSavedEvent.class,  DotSamlProxyFactory.getInstance()))
+                    .onFailure(e -> Logger.error(this.getClass().getName(), e.getMessage()));
+    
+    
+            System.out.println("SAML OSGI STARTED.....");
+            
+            System.setProperty(DOT_SAML_ACTIVATED, "true");
+        }
     }
+    
+    
+    
+    
 
     private void addSamlWebInterceptor() {
         final FilterWebInterceptorProvider filterWebInterceptorProvider =
@@ -121,6 +143,9 @@ public class Activator extends GenericBundleActivator {
 
         // Unregister the registered services
         this.samlServiceBuilder.unregister();
+        
+        System.setProperty(DOT_SAML_ACTIVATED, null);
+        
     }
 
 }
