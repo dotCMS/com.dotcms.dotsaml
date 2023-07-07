@@ -205,7 +205,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                                         + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
                                         + attribute.getAttributeValues().size());
 
-                        attributes.put(attribute.getName(), attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue());
+                        final String value = attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue();
+                        attributes.put(attribute.getName(), value);
+                        attributes.put(attribute.getFriendlyName(), value);
 
                     });
                 });
