@@ -59,6 +59,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -167,6 +168,56 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         } catch (Exception e) {
 
             final String nameID = null != attributes? NameID.class.cast(attributes.getNameID()).getValue(): StringUtils.EMPTY ;
+            this.messageObserver.updateError(this.getClass().getName(),
+                    "An error occurred when loading user with ID '" + nameID+ "'", e);
+        }
+
+        return attributes;
+    }
+
+    @Override
+    public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                    final HttpServletResponse response,
+                                                    final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final Map<String, String> attributes = new HashMap<>();
+
+        try {
+
+            final Assertion assertion = this.resolveAssertion(request, response, identityProviderConfiguration);
+            this.messageObserver.updateDebug(this.getClass().getName(),
+                    "Resolving attributes - Name ID : " + assertion.getSubject().getNameID().getValue());
+
+            attributes.put("nameID", assertion.getSubject().getNameID().getValue());
+
+            if (null != assertion.getAttributeStatements()) {
+                assertion.getAttributeStatements().forEach(attributeStatement -> {
+
+                    this.messageObserver.updateDebug(this.getClass().getName(),
+                            "Attribute Statement - local name: " + AttributeStatement.DEFAULT_ELEMENT_LOCAL_NAME + ", type: "
+                                    + AttributeStatement.TYPE_LOCAL_NAME + ", number of attributes: "
+                                    + attributeStatement.getAttributes().size());
+
+                    attributeStatement.getAttributes().forEach(attribute -> {
+
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Attribute - friendly name: " + attribute.getFriendlyName() + ", name: " + attribute.getName()
+                                        + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
+                                        + attribute.getAttributeValues().size());
+
+                        attributes.put(attribute.getName(), attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue());
+
+                    });
+                });
+            }
+
+            attributes.put("sessionIndex", this.getSessionIndex(assertion));
+        } catch (AttributesNotFoundException e) {
+
+            this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
+        } catch (Exception e) {
+
+            final String nameID = null != attributes? attributes.get("nameID"): StringUtils.EMPTY ;
             this.messageObserver.updateError(this.getClass().getName(),
                     "An error occurred when loading user with ID '" + nameID+ "'", e);
         }
