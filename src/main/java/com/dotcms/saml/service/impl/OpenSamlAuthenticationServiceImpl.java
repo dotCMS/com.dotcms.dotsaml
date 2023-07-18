@@ -23,6 +23,7 @@ import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.xml.security.c14n.Canonicalizer;
@@ -58,6 +59,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -173,6 +175,58 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return attributes;
     }
 
+    @Override
+    public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
+                                                    final HttpServletResponse response,
+                                                    final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final Map<String, String> attributes = new HashMap<>();
+
+        try {
+
+            final Assertion assertion = this.resolveAssertion(request, response, identityProviderConfiguration);
+            this.messageObserver.updateDebug(this.getClass().getName(),
+                    "Resolving attributes - Name ID : " + assertion.getSubject().getNameID().getValue());
+
+            attributes.put("nameID", assertion.getSubject().getNameID().getValue());
+
+            if (null != assertion.getAttributeStatements()) {
+                assertion.getAttributeStatements().forEach(attributeStatement -> {
+
+                    this.messageObserver.updateDebug(this.getClass().getName(),
+                            "Attribute Statement - local name: " + AttributeStatement.DEFAULT_ELEMENT_LOCAL_NAME + ", type: "
+                                    + AttributeStatement.TYPE_LOCAL_NAME + ", number of attributes: "
+                                    + attributeStatement.getAttributes().size());
+
+                    attributeStatement.getAttributes().forEach(attribute -> {
+
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Attribute - friendly name: " + attribute.getFriendlyName() + ", name: " + attribute.getName()
+                                        + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
+                                        + attribute.getAttributeValues().size());
+
+                        final String value = attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue();
+                        attributes.put(attribute.getName(), value);
+                        attributes.put(attribute.getFriendlyName(), value);
+
+                    });
+                });
+            }
+
+            attributes.put("sessionIndex", this.getSessionIndex(assertion));
+        } catch (AttributesNotFoundException e) {
+
+            this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
+        } catch (Exception e) {
+
+            final String nameID = null != attributes? attributes.get("nameID"): StringUtils.EMPTY ;
+            this.messageObserver.updateError(this.getClass().getName(),
+                    "An error occurred when loading user with ID '" + nameID+ "'", e);
+        }
+
+        return attributes;
+    }
+
     protected Assertion resolveAssertion(final HttpServletRequest request, final HttpServletResponse response,
                                       final IdentityProviderConfiguration identityProviderConfiguration) {
 
@@ -228,7 +282,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         final Attributes.Builder attrBuilder = new Attributes.Builder();
 
-        this.validateAttributes(assertion);
+        this.validateAttributes(assertion, identityProviderConfiguration);
 
         final String nameId = assertion.getSubject().getNameID().getValue();
 
@@ -239,72 +293,73 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         this.messageObserver.updateDebug(this.getClass().getName(),
                 "Elements of type AttributeStatement in assertion : " + assertion.getAttributeStatements().size());
-
-        assertion.getAttributeStatements().forEach(attributeStatement -> {
-
-            this.messageObserver.updateDebug(this.getClass().getName(),
-                    "Attribute Statement - local name: " + AttributeStatement.DEFAULT_ELEMENT_LOCAL_NAME + ", type: "
-                            + AttributeStatement.TYPE_LOCAL_NAME + ", number of attributes: "
-                            + attributeStatement.getAttributes().size());
-
-            attributeStatement.getAttributes().forEach(attribute -> {
+        if (null != assertion.getAttributeStatements()) {
+            assertion.getAttributeStatements().forEach(attributeStatement -> {
 
                 this.messageObserver.updateDebug(this.getClass().getName(),
-                        "Attribute - friendly name: " + attribute.getFriendlyName() + ", name: " + attribute.getName()
-                                + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
-                                + attribute.getAttributeValues().size());
+                        "Attribute Statement - local name: " + AttributeStatement.DEFAULT_ELEMENT_LOCAL_NAME + ", type: "
+                                + AttributeStatement.TYPE_LOCAL_NAME + ", number of attributes: "
+                                + attributeStatement.getAttributes().size());
 
-                if ((attribute.getName() != null && attribute.getName().equals(emailField))
-                        || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(emailField))) {
-
-                    this.resolveEmail(emailField, attrBuilder, attribute, nameId, allowNullEmail);
-                } else if ((attribute.getName() != null && attribute.getName().equals(lastNameField))
-                        || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(lastNameField))) {
+                attributeStatement.getAttributes().forEach(attribute -> {
 
                     this.messageObserver.updateDebug(this.getClass().getName(),
-                            "Resolving attribute - LastName : " + lastNameField);
+                            "Attribute - friendly name: " + attribute.getFriendlyName() + ", name: " + attribute.getName()
+                                    + ", type: " + Attribute.TYPE_LOCAL_NAME + ", number of values: "
+                                    + attribute.getAttributeValues().size());
 
-                    final String lastName = StringUtils.isNotBlank(
-                            attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue())
-                            ? attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue()
-                            : checkDefaultValue(lastNameForNullValue, lastNameField + " attribute is null",
-                            lastNameField + " is null and the default is null too");
+                    if ((attribute.getName() != null && attribute.getName().equals(emailField))
+                            || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(emailField))) {
 
-                    attrBuilder.lastName(lastName);
+                        this.resolveEmail(emailField, attrBuilder, attribute, nameId, allowNullEmail);
+                    } else if ((attribute.getName() != null && attribute.getName().equals(lastNameField))
+                            || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(lastNameField))) {
 
-                    this.messageObserver.updateDebug(this.getClass().getName(),
-                            "Resolved attribute - lastName : " + attrBuilder.getLastName());
-                } else if ((attribute.getName() != null && attribute.getName().equals(firstNameField))
-                        || (attribute.getFriendlyName() != null
-                        && attribute.getFriendlyName().equals(firstNameField))) {
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Resolving attribute - LastName : " + lastNameField);
 
-                    this.messageObserver.updateDebug(this.getClass().getName(),
-                            "Resolving attribute - firstName : " + firstNameField);
+                        final String lastName = StringUtils.isNotBlank(
+                                attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue())
+                                ? attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue()
+                                : checkDefaultValue(lastNameForNullValue, lastNameField + " attribute is null",
+                                lastNameField + " is null and the default is null too");
 
-                    final String firstName = StringUtils.isNotBlank(
-                            attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue())
-                            ? attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue()
-                            : checkDefaultValue(firstNameForNullValue, firstNameField + " attribute is null",
-                            firstNameField + " is null and the default is null too");
+                        attrBuilder.lastName(lastName);
 
-                    attrBuilder.firstName(firstName);
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Resolved attribute - lastName : " + attrBuilder.getLastName());
+                    } else if ((attribute.getName() != null && attribute.getName().equals(firstNameField))
+                            || (attribute.getFriendlyName() != null
+                            && attribute.getFriendlyName().equals(firstNameField))) {
 
-                    this.messageObserver.updateDebug(this.getClass().getName(),
-                            "Resolved attribute - firstName : " + attrBuilder.getFirstName());
-                } else if ((attribute.getName() != null && attribute.getName().equals(rolesField))
-                        || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(rolesField))) {
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Resolving attribute - firstName : " + firstNameField);
 
-                    this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attribute - roles : " + rolesField);
-                    attrBuilder.addRoles(true).roles(attribute);
-                    this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attributes - roles : " + attribute);
-                } else {
+                        final String firstName = StringUtils.isNotBlank(
+                                attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue())
+                                ? attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue()
+                                : checkDefaultValue(firstNameForNullValue, firstNameField + " attribute is null",
+                                firstNameField + " is null and the default is null too");
 
-                    final String attributeName = attribute.getName();
-                    this.messageObserver.updateWarning(this.getClass().getName(),
-                            attributeName + " attribute did not match any user property in the idpConfig: " + customConfiguration);
-                }
+                        attrBuilder.firstName(firstName);
+
+                        this.messageObserver.updateDebug(this.getClass().getName(),
+                                "Resolved attribute - firstName : " + attrBuilder.getFirstName());
+                    } else if ((attribute.getName() != null && attribute.getName().equals(rolesField))
+                            || (attribute.getFriendlyName() != null && attribute.getFriendlyName().equals(rolesField))) {
+
+                        this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attribute - roles : " + rolesField);
+                        attrBuilder.addRoles(true).roles(attribute);
+                        this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attributes - roles : " + attribute);
+                    } else {
+
+                        final String attributeName = attribute.getName();
+                        this.messageObserver.updateWarning(this.getClass().getName(),
+                                attributeName + " attribute did not match any user property in the idpConfig: " + customConfiguration);
+                    }
+                });
             });
-        });
+        }
 
         attrBuilder.sessionIndex(this.getSessionIndex(assertion));
 
@@ -423,16 +478,24 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return StringUtils.replace(nameId, AT_SYMBOL, AT_);
     }
 
-    protected void validateAttributes(final Assertion assertion) throws AttributesNotFoundException {
+    protected void validateAttributes(final Assertion assertion, final IdentityProviderConfiguration identityProviderConfiguration) throws AttributesNotFoundException {
 
         if (null == assertion) {
 
             throw new DotRuntimeException("SAML Assertion is null");
         }
 
+        final boolean allowEmptyAttrs = identityProviderConfiguration.containsOptionalProperty("saml.allow.empty.attrs")?
+                Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("saml.allow.empty.attrs").toString()): true;
+        this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_EMAIL_ATTRIBUTE);
         if (null == assertion.getAttributeStatements() || assertion.getAttributeStatements().isEmpty()) {
 
-            throw new DotRuntimeException("Attribute list in SAML Assertion is null or empty");
+            if (allowEmptyAttrs) {
+
+                Logger.info(this.getClass().getName(), "SAML: Attributes are empty");
+            } else {
+                throw new DotRuntimeException("Attribute list in SAML Assertion is null or empty");
+            }
         }
 
         if (null == assertion.getSubject()) {
