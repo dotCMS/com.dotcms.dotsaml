@@ -7,11 +7,13 @@ import com.dotcms.saml.service.impl.DotHTTPPOSTDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotcms.saml.utils.SignatureUtils;
+import com.dotmarketing.util.UtilMethods;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.velocity.app.VelocityEngine;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
+import org.opensaml.saml.common.binding.SAMLBindingSupport;
 import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
 import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.common.xml.SAMLConstants;
@@ -44,7 +46,9 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
     }
 
     @Override
-    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration identityProviderConfiguration) {
+    public void handle(final HttpServletRequest request, final HttpServletResponse response,
+                       final IdentityProviderConfiguration identityProviderConfiguration,
+                       final String relayState) {
 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
@@ -87,6 +91,11 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
             SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
         }
 
+        if (UtilMethods.isSet(relayState)) {
+
+            this.messageObserver.updateDebug(this.getClass().getName(), "Setting the relay state: " + relayState);
+            SAMLBindingSupport.setRelayState(context, relayState);
+        }
         this.doPost(context, response, authnRequest, identityProviderConfiguration);
     }
 

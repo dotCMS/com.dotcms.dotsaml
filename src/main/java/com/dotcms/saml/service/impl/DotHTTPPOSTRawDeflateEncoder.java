@@ -180,7 +180,7 @@ public class DotHTTPPOSTRawDeflateEncoder  implements HttpServletResponseMessage
             encodedRelayState = HTMLEncoder.encodeForHTMLAttribute(relayState);
             this.messageObserver.updateDebug(this.getClass().getName(),
             "Setting RelayState parameter to: '" + relayState + "' , encoded as '" +  encodedRelayState+ "' ");
-            context.put("RelayState", "<input type=\"hidden\" name=\"SAMLResponse\" value=\""+encodedRelayState+"\"/>");
+            context.put("RelayState", "<input type=\"hidden\" name=\"RelayState\" value=\""+encodedRelayState+"\"/>");
         }
     }
 

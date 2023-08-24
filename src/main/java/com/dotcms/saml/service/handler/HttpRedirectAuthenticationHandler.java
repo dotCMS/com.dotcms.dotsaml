@@ -9,10 +9,15 @@ import com.dotcms.saml.service.impl.DotHTTPRedirectDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotcms.saml.utils.SignatureUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
+import org.apache.velocity.context.Context;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
+import org.opensaml.saml.common.binding.SAMLBindingSupport;
 import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
 import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.saml2.binding.encoding.impl.HTTPRedirectDeflateEncoder;
@@ -46,7 +51,9 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
     }
 
     @Override
-    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration identityProviderConfiguration) {
+    public void handle(final HttpServletRequest request, final HttpServletResponse response,
+                       final IdentityProviderConfiguration identityProviderConfiguration,
+                       final String relayState) {
 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration);
@@ -89,6 +96,12 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
         if (needSignatureSigningParams) {
             SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
+        }
+
+        if (UtilMethods.isSet(relayState)) {
+
+            this.messageObserver.updateDebug(this.getClass().getName(), "Setting the relay state: " + relayState);
+            SAMLBindingSupport.setRelayState(context, relayState);
         }
         this.doRedirect(context, response, authnRequest, identityProviderConfiguration);
     }
