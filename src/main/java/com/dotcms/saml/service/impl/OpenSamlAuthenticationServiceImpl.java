@@ -126,13 +126,13 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     @Override
     public void authentication(final HttpServletRequest  request,
                                final HttpServletResponse response,
-                               final IdentityProviderConfiguration identityProviderConfiguration) {
+                               final IdentityProviderConfiguration identityProviderConfiguration, final String relayState) {
 
 
         final AuthenticationHandler authenticationHandler =
                 this.authenticationResolverHandlerFactory.getAuthenticationHandlerForSite(identityProviderConfiguration);
 
-        authenticationHandler.handle(request, response, identityProviderConfiguration);
+        authenticationHandler.handle(request, response, identityProviderConfiguration, relayState);
     }
 
     @Override

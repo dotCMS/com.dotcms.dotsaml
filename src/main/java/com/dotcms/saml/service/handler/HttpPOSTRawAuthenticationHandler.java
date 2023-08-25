@@ -6,10 +6,12 @@ import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPPOSTRawDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.SamlUtils;
+import com.dotmarketing.util.UtilMethods;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.encoder.MessageEncodingException;
+import org.opensaml.saml.common.binding.SAMLBindingSupport;
 import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
 import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
 import org.opensaml.saml.common.xml.SAMLConstants;
@@ -38,10 +40,12 @@ public class HttpPOSTRawAuthenticationHandler implements AuthenticationHandler {
     }
 
     @Override
-    public void handle(final HttpServletRequest request, final HttpServletResponse response, final IdentityProviderConfiguration idpConfig) {
+    public void handle(final HttpServletRequest request, final HttpServletResponse response,
+                       final IdentityProviderConfiguration identityProviderConfiguration,
+                       final String relayState) {
 
         final MessageContext context    = new MessageContext(); // main context
-        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, idpConfig, SAMLConstants.SAML2_POST_BINDING_URI);
+        final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
 
         context.setMessage(authnRequest);
 
@@ -50,10 +54,16 @@ public class HttpPOSTRawAuthenticationHandler implements AuthenticationHandler {
         // info about the endpoint of the peer entity
         final SAMLEndpointContext endpointContext     = peerEntityContext.getSubcontext(SAMLEndpointContext.class, true);
 
-        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(idpConfig));
+        endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
         // TODO: ADD LOGIC FOR needSign
-        this.setSignatureSigningParams(context, idpConfig);
-        this.doPost(context, response, authnRequest, idpConfig);
+        this.setSignatureSigningParams(context, identityProviderConfiguration);
+
+        if (UtilMethods.isSet(relayState)) {
+
+            this.messageObserver.updateDebug(this.getClass().getName(), "Setting the relay state: " + relayState);
+            SAMLBindingSupport.setRelayState(context, relayState);
+        }
+        this.doPost(context, response, authnRequest, identityProviderConfiguration);
     }
 
     private void setSignatureSigningParams(final MessageContext context, final IdentityProviderConfiguration idpConfig) {
