@@ -5,6 +5,7 @@ import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.EndpointService;
 import com.dotcms.saml.service.external.SamlConstants;
+import com.dotmarketing.util.Config;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -13,6 +14,9 @@ import org.apache.commons.lang.StringUtils;
  * @author jsanca
  */
 public class EndpointServiceImpl implements EndpointService {
+
+	private static final String DOTCMS_SAML_USE_IDP_CONFIG_ID = "dotcms.saml.use.idp.config.id";
+	private static final String IDP_CONFIG_IDENTIFIER = "idp.config.identifier";
 
 	private final SamlConfigurationService samlConfigurationService;
 
@@ -36,7 +40,7 @@ public class EndpointServiceImpl implements EndpointService {
 				+ spEndpointHostname(identityProviderConfiguration)
 				+ SamlConstants.ASSERTION_CONSUMER_ENDPOINT_DOTSAML3SP
 				+ "/"
-				+ identityProviderConfiguration.getId();
+				+ getIDPConfigId(identityProviderConfiguration);
 	}
 
 	/**
@@ -57,7 +61,7 @@ public class EndpointServiceImpl implements EndpointService {
 				+ spEndpointHostname(identityProviderConfiguration)
 				+ SamlConstants.LOGOUT_SERVICE_ENDPOINT_DOTSAML3SP
 				+ "/"
-				+ identityProviderConfiguration.getId();
+				+ getIDPConfigId(identityProviderConfiguration);
 	}
 
 	/**
@@ -124,4 +128,19 @@ public class EndpointServiceImpl implements EndpointService {
 		 
 		return spHostName;
 	}
+
+	/*
+	 * Utility to get the IDP config ID. If the config flag `dotcms.saml.use.idp.config.id`
+	 * is set, use the IDP config identifier set in the IDP property `idp.config.identifier`.
+	 * Otherwise, use the IDP config ID that is set to the host id.
+	 */
+	private String getIDPConfigId(final IdentityProviderConfiguration identityProviderConfiguration) {
+		if (Config.getBooleanProperty(DOTCMS_SAML_USE_IDP_CONFIG_ID, false)) {
+			if (identityProviderConfiguration.containsOptionalProperty(IDP_CONFIG_IDENTIFIER)) {
+				return (String) identityProviderConfiguration.getOptionalProperty(IDP_CONFIG_IDENTIFIER);
+			}
+		}
+		return identityProviderConfiguration.getId();
+	}
+
 }

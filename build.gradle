@@ -3,7 +3,7 @@ plugins {
 }
 
 sourceCompatibility = '1.8'
-version = '22.03'
+version = '24.02.29'
 
 repositories {
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
@@ -14,7 +14,7 @@ configurations {
 dependencies {
 
     compile  ('io.vavr:vavr:0.9.3')
-    compile  ('com.dotcms:dotcms:21.01') { transitive = false }
+    compile  ('com.dotcms:dotcms:23.01.12') { transitive = false }
     compile  ('org.opensaml:opensaml-messaging-impl:3.3.1') { transitive = false }
     compile  ('commons-io:commons-io:2.8.0') { transitive = false }
     compile  ('org.apache.servicemix.bundles:org.apache.servicemix.bundles.opensaml:3.3.1_1'){
