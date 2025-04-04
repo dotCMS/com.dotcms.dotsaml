@@ -96,7 +96,7 @@ public class Activator extends GenericBundleActivator {
         Try.run(()->delegate.remove(this.interceptorName, true))
                 .onFailure(e -> Logger.error(this.getClass().getName(), e.getMessage()));
 
-        delegate.add(samlWebInterceptor);
+        delegate.addFirst(samlWebInterceptor);
     }
 
 
