@@ -7,3 +7,6 @@
 
 For more information on how to configure SAML in dotCMS, see the documentation here: https://dotcms.com/docs/latest/sso-saml
 
+#### Change Log:
+- 25.04.28: added the ability to remove the RequestedAuthnContext from the auth
+
