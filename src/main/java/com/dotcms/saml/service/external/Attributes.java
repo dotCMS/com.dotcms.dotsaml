@@ -8,7 +8,10 @@ import java.io.Serializable;
 /**
  * Encapsulates the attributes retrieve from the
  * {@link org.opensaml.saml.saml2.core.Assertion}
- * 
+ *
+ * This class only encapsulates a few parameters, future forward we need tor encapsulate such as
+ * a map to group extra attributes that will be place on the Information Json field of the User
+ *
  * @author jsanca
  */
 public class Attributes implements Serializable {

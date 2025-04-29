@@ -1,8 +1,8 @@
 package com.dotcms.saml.service.external;
 
 /**
- * Encapsulates the idp meta datas binding tye names
- * 
+ * Encapsulates the idp meta datas binding type names
+ * The Binding type tells into the XML which method to use on the SAML process
  * @author jsanca
  */
 public enum BindingType {
