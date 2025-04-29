@@ -82,6 +82,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	private static final XMLObjectBuilderFactory  builderFactory     = XMLObjectProviderRegistrySupport.getBuilderFactory();
 	private static final Map<String, Credential>  credentialMap      = new ConcurrentHashMap<>();
 	private static final Map<String, Credential>  idpCredentialMap   = new ConcurrentHashMap<>();
+	public static final String SKIP_REQUEST_AUTHN_CONTEXT = "skip.request.authn.context";
 
 	private final CredentialService credentialService;
 	private final EndpointService endpointService;
@@ -236,6 +237,8 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 										  final String protocolBinding) {
 
 		final String ipDSSODestination  = this.getIPDSSODestination(identityProviderConfiguration);
+		final boolean skipRequestAuthnContext = identityProviderConfiguration.containsOptionalProperty(SKIP_REQUEST_AUTHN_CONTEXT) ?
+				Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty(SKIP_REQUEST_AUTHN_CONTEXT).toString()) : false;
 
 		// IDP url
 		if (StringUtils.isBlank(ipDSSODestination)) {
@@ -268,7 +271,9 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		authnRequest.setIssuer(this.buildIssuer(identityProviderConfiguration));
 
 		authnRequest.setNameIDPolicy(this.buildNameIdPolicy(identityProviderConfiguration));
-		authnRequest.setRequestedAuthnContext(this.buildRequestedAuthnContext(identityProviderConfiguration));
+		if (!skipRequestAuthnContext) {
+			authnRequest.setRequestedAuthnContext(this.buildRequestedAuthnContext(identityProviderConfiguration));
+		}
 		authnRequest.setVersion(SAMLVersion.VERSION_20);
 		authnRequest.setForceAuthn(
 				this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_FORCE_AUTHN));
@@ -407,12 +412,17 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 
 		requestedAuthnContext.setComparison(this.getAuthnContextComparisonTypeEnumeration(identityProviderConfiguration));
 
-		final AuthnContextClassRef passwordAuthnContextClassRef = this.buildSAMLObject(AuthnContextClassRef.class);
+		final String samlAuthContextClassRefList = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+				SamlName.DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF);
 
-		passwordAuthnContextClassRef.setAuthnContextClassRef(this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,
-				SamlName.DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF));
+		final String [] samlAuthContextClassRefArray = StringUtils.split(samlAuthContextClassRefList, ",");
 
-		requestedAuthnContext.getAuthnContextClassRefs().add(passwordAuthnContextClassRef);
+		for (final String samlAuthContextClassRef : samlAuthContextClassRefArray) {
+
+			final AuthnContextClassRef authnContextClassRef = this.buildSAMLObject(AuthnContextClassRef.class);
+			authnContextClassRef.setAuthnContextClassRef(samlAuthContextClassRef.trim());
+			requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
+		}
 
 		return requestedAuthnContext;
 	}
