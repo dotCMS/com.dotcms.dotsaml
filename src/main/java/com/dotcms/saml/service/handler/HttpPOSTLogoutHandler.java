@@ -65,6 +65,7 @@ public class HttpPOSTLogoutHandler implements LogoutHandler {
         final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(
                 identityProviderConfiguration, NameID.class.cast(nameID), sessionIndexValue);
 
+        // Similar to the AuthRequest, logout request can be sign
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("logout.sign.request")?
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("logout.sign.request").toString()): false;
 

@@ -21,6 +21,10 @@ import org.apache.velocity.app.VelocityEngine;
 
 import java.util.Collections;
 
+/**
+ * This class is the proxy implementation to create the SAML dotCMS Services
+ * @author jsanca
+ */
 public class SamlServiceBuilderImpl implements SamlServiceBuilder {
 
 

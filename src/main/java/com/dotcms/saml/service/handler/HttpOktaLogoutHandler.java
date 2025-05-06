@@ -11,7 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
- * Implements the Logout handler by POST
+ * Implements the Logout handler by Redirect for Okta
+ * Okta when does normal logout only does in the associated app, but if wants to get logout on all apps, needs to use a custom logout endpoint
  * @author jsanca
  */
 public class HttpOktaLogoutHandler implements LogoutHandler {
@@ -37,10 +38,12 @@ public class HttpOktaLogoutHandler implements LogoutHandler {
                        final IdentityProviderConfiguration identityProviderConfiguration) {
 
         this.messageObserver.updateInfo(this.getClass().getName(), "Processing saml logout Okta for nameID: " + nameID);
+        // this takes the logout callback if any defined, otherwise uses show-logout
         final String logoutCallback = identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL.getPropertyName())?
                 identityProviderConfiguration.getOptionalProperty(SamlName.DOT_SAML_LOGOUT_SERVICE_ENDPOINT_URL.getPropertyName()).toString():
                 "/dotAdmin/show-logout";
 
+        // this is a hack to force okta to do logout from the idp
         final String logoutPath = identityProviderConfiguration.getOptionalProperty("logout.okta.url").toString();
 
         try {

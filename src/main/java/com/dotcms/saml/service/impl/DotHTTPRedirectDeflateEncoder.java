@@ -21,6 +21,10 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.List;
 
+/**
+ * This class is in charge of creating a html form to do the redirect for the auth request login to the IDP
+ * @author jsanca
+ */
 public class DotHTTPRedirectDeflateEncoder extends HTTPRedirectDeflateEncoder {
 
     private final boolean clearQueryParams;

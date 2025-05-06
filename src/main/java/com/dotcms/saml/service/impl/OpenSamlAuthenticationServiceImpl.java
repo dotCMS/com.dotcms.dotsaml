@@ -65,6 +65,13 @@ import java.util.Map;
 
 /**
  * Open Saml implementation
+ * This is the main class to interact with the IDP Assertion
+ * Does the init of the SAML services
+ * Validates the request to see if it is minimum ok
+ * Handles the authentication to create the auth request to ask the IDP for login
+ * Similar way handles the logout request
+ * Parse and retrieves the attributes from the Assertion SAML: this contains the user information such as name, email, etc; plus roles (claims, authorizations, groups, etc)
+ * Also renders the metadata and have some util methods to retrieve values form the attributes
  * @author jsanca
  */
 public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationService {
@@ -99,6 +106,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.initializer              = initializer;
     }
 
+    /**
+     * Inits the SAML Services
+     * @param context
+     */
     @Override
     public void initService (final Map<String, Object> context) {
 
@@ -112,6 +123,14 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         }
     }
 
+    /**
+     * Figure out if the request has a valid Assertion, usually just checks if a parameter is coming on the request
+     *
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @return
+     */
     @Override
     public boolean isValidSamlRequest(final HttpServletRequest  request,
                                       final HttpServletResponse response,
@@ -123,6 +142,14 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return assertionResolverHandler.isValidSamlRequest(request, response, identityProviderConfiguration);
     }
 
+    /**
+     * This method creates the authentication request based on the site configuration and the IDP metadata, sends the request to the IDP
+     * to ask for the login credentials or so
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @param relayState
+     */
     @Override
     public void authentication(final HttpServletRequest  request,
                                final HttpServletResponse response,
@@ -135,6 +162,14 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         authenticationHandler.handle(request, response, identityProviderConfiguration, relayState);
     }
 
+    /**
+     * This method creates the logout requet based on the site configuration and the IDP metadata, sends the request to the IDP to ask for the logout
+     * @param request
+     * @param response
+     * @param nameID
+     * @param sessionIndexValue
+     * @param identityProviderConfiguration
+     */
     @Override
     public void logout(final HttpServletRequest  request,
                        final HttpServletResponse response,
@@ -149,6 +184,13 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     }
 
 
+    /**
+     * This method is in charge of retrieve the attributes (aka user info + roles) from the IDP XML Assertion
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @return
+     */
     @Override
     public Attributes resolveAttributes(final HttpServletRequest  request,
                                         final HttpServletResponse response,
@@ -157,7 +199,9 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         try {
 
+            // extracting the assertion from the request
             final Assertion assertion = this.resolveAssertion(request, response, identityProviderConfiguration);
+            // extrating the attributes form the asserrion
             attributes                = this.retrieveAttributes(assertion, identityProviderConfiguration);
 
             this.messageObserver.updateDebug(this.getClass().getName(), "Validating user - " + attributes);
@@ -175,6 +219,15 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return attributes;
     }
 
+
+    /**
+     * This method resolve all attributes returns just key value (instead of attributes) and it is mostly from scenerios where the client
+     * wants to do something custom instead the normal behavior, so they need to see all the attributes to do the custom thing
+     * @param request
+     * @param response
+     * @param identityProviderConfiguration
+     * @return
+     */
     @Override
     public Map<String, String> resolveAllAttributes(final HttpServletRequest request,
                                                     final HttpServletResponse response,
@@ -240,6 +293,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     /**
      * Return the value of the /AuthnStatement@SessionIndex element in an
      * assertion
+     * The session index is a ref number to the session created on the IDP
      *
      * @return The value. <code>null</code>, if the assertion does not contain
      *         the element.
@@ -258,15 +312,23 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return sessionIndex;
     }
 
-    // resolve the attributes from the assertion resolved from the OpenSaml
-    // artifact resolver via
+    /**
+     * Resolve the attributes from the assertion resolved from the OpenSaml
+     * artifact resolver via
+     * @param assertion
+     * @param identityProviderConfiguration
+     * @return
+     * @throws AttributesNotFoundException
+     */
     protected Attributes retrieveAttributes(final Assertion assertion, final IdentityProviderConfiguration identityProviderConfiguration)
             throws AttributesNotFoundException {
 
+        // First we retrieves the attributes name from the config (if they exist, otherwise will use the default names)
         final String emailField     = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_EMAIL_ATTRIBUTE);
         final String firstNameField = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_FIRSTNAME_ATTRIBUTE);
         final String lastNameField  = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_LASTNAME_ATTRIBUTE);
         final String rolesField     = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_ROLES_ATTRIBUTE);
+        // this is configuration when some of these props is null
         final String firstNameForNullValue = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,  SamlName.DOT_SAML_FIRSTNAME_ATTRIBUTE_NULL_VALUE);
         final String lastNameForNullValue  = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,  SamlName.DOT_SAML_LASTNAME_ATTRIBUTE_NULL_VALUE);
         final boolean allowNullEmail       = this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_EMAIL_ATTRIBUTE_ALLOW_NULL);
@@ -454,6 +516,13 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.messageObserver.updateDebug(this.getClass().getName(),  "Resolved attribute - Email : " + attributesBuilder.getEmail());
     }
 
+    /**
+     * This method allows to create such as a default generic email
+     * The email is based in the nameId @no-reply.dotcms.com, todo: this may be good to have a configuration point to use a custom email mask
+     * @param nameId
+     * @param allowNullEmail
+     * @return
+     */
     protected String createNoReplyEmail(final String nameId, final boolean allowNullEmail) {
 
         if (!allowNullEmail) {
@@ -478,6 +547,12 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return StringUtils.replace(nameId, AT_SYMBOL, AT_);
     }
 
+    /**
+     * We make a validation based on, if the SAML will allows empty attributes, check if the subject (name id) is present
+     * @param assertion
+     * @param identityProviderConfiguration
+     * @throws AttributesNotFoundException
+     */
     protected void validateAttributes(final Assertion assertion, final IdentityProviderConfiguration identityProviderConfiguration) throws AttributesNotFoundException {
 
         if (null == assertion) {
@@ -509,6 +584,11 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         }
     }
 
+    /**
+     * This is the method to allows dotCMS to create SP (aka dotCMS) metadata
+     * @param writer
+     * @param identityProviderConfiguration
+     */
     @Override
     public void renderMetadataXML(final Writer writer,
                            final IdentityProviderConfiguration identityProviderConfiguration) {
@@ -532,6 +612,12 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         }
     }
 
+    /**
+     * This is a helper method to retrieve a value from an object
+     * Could retrieve NameID as a String, XMLObject as a String (first child) or just an string
+     * @param samlObject
+     * @return
+     */
     @Override
     public String getValue(final Object samlObject) {
 
@@ -545,6 +631,11 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         return null != samlObject? samlObject.toString(): null;
     }
 
+    /**
+     * Retrieves values from nodes that are collections
+     * @param samlObject
+     * @return
+     */
     @Override
     public List<String> getValues(final Object samlObject) {
 

@@ -10,7 +10,9 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * Provides a helper for endpoint urls of the SAML config.
- * 
+ * For instance get the customer endpoint which is the landing page where the idp sends the POST assertion with the user information and roles,
+ * to be created on dotCMS
+ * Samething for logout
  * @author jsanca
  */
 public class EndpointServiceImpl implements EndpointService {

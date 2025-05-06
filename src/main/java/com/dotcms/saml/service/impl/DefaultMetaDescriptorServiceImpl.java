@@ -51,7 +51,8 @@ import javax.xml.namespace.QName;
 
 /**
  * Idp Meta Descriptor service default implementation.
- * 
+ * - Parse the Identity provider metadata
+ * - Creates the SP (aka dotCMS) metadata
  * @author jsanca
  */
 
@@ -114,6 +115,11 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 				this.getCredentialSigningList(descriptor.getEntityID(), idpDescriptor));
 	}
 
+	/**
+	 * Retrieves the logout endpoints from the IDP metadata descriptor
+	 * @param idpDescriptor IDPSSODescriptor
+	 * @return Map - binding - location
+	 */
 	protected Map<String, String> getSingleLogoutMap(final IDPSSODescriptor idpDescriptor) {
 
 		final Map<String, String> singleLogoutBindingLocationMap = new LinkedHashMap<>();
@@ -313,7 +319,7 @@ public class DefaultMetaDescriptorServiceImpl implements MetaDescriptorService {
 	}
 
 	/**
-	 * Set the Key Descriptors, SIGNING and ENCRYPTION keyInfo.
+	 * Set the Key Descriptors, SIGNING and ENCRYPTION keyInfo (if any).
 	 * 
 	 * @param spssoDescriptor {@link SPSSODescriptor}
 	 * @param identityProviderConfiguration {@link IdentityProviderConfiguration}

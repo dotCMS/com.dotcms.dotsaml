@@ -72,6 +72,8 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * This Service encapsulates all the Saml Stuff
+ * Creates SAMLObjects, AuthRequest, LogoutRequest
+ * Also helper method to create and retreives SAML Component
  * 
  * @author jsanca
  */
