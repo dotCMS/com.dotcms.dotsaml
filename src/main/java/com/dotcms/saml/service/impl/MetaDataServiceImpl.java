@@ -35,7 +35,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 	}
 
 	/**
-	 * Gets the metadata, null if it can not be created.
+	 * Gets the IDP metadata, null if it can not be created.
 	 * 
 	 * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
 	 * @return MetaDataBean

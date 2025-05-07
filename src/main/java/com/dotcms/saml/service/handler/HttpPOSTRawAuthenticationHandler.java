@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implements the authentication handler by POST
+ * Todo: this needs the sign: https://github.com/dotCMS/core/issues/32099
  * @author jsanca
  */
 public class HttpPOSTRawAuthenticationHandler implements AuthenticationHandler {

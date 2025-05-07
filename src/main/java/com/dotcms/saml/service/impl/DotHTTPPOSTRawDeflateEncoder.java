@@ -38,6 +38,7 @@ import java.util.Map;
  */
 public class DotHTTPPOSTRawDeflateEncoder  implements HttpServletResponseMessageEncoder<SAMLObject>, SAMLMessageEncoder {
 
+    // this file is in src/main/resources/templates/
     private static final String TEMPLATE_AUTH_POST_RAW = "/templates/auth-post-raw.txt";
     private final RawTemplateProcessor rawTemplateProcessor;
     private HttpServletResponse response;
@@ -144,7 +145,7 @@ public class DotHTTPPOSTRawDeflateEncoder  implements HttpServletResponseMessage
                 "Encoding action url of '" + endpointURL + "' with encoded value '" +  encodedEndpointURL+ "' ");
         context.put("action", encodedEndpointURL);
         context.put("binding", this.getBindingURI());
-        context.put("RelayState", "");  //  init as an empty in case it is not needed
+        context.put("RelayState", "");   //  init as an empty in case it is not needed
         context.put("SAMLRequest", "");
         context.put("SAMLResponse", "");
 

@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implements the authentication handler by POST
+ * This class creates the XML associated the AuthRequest to send the login request to the IDP
  * @author jsanca
  */
 public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
@@ -53,11 +54,12 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
 
+        // the client can ask to sign or not the request
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.request").toString()): false;
 
         if (needSign) {
-
+        // in case the sign is needed here is the logic for
             try {
 
                 final Signature signature = this.createSignature(identityProviderConfiguration);
@@ -85,12 +87,14 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
+        // Saml can also send an extra params signed
         final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.params").toString()): true;
         if (needSignatureSigningParams) {
             SignatureUtils.setSignatureSigningParams(this.samlCoreService.getCredential(identityProviderConfiguration), context);
         }
 
+        // in case the relay state is set
         if (UtilMethods.isSet(relayState)) {
 
             this.messageObserver.updateDebug(this.getClass().getName(), "Setting the relay state: " + relayState);

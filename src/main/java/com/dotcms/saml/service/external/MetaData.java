@@ -8,6 +8,9 @@ import java.util.Map;
 
 /**
  * Encapsulates the metadata bean stored in the idp metadata xml file
+ * The meta is usually an XML sent from IDP (aka Azure, Okta, etc)
+ * The metadata.xml contains the public key, the endpoint to login/logout
+ * and many other information to interact with the IDP
  * @author jsanca
  */
 public class MetaData implements Serializable {

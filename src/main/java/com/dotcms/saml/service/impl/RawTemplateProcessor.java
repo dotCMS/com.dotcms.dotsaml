@@ -11,6 +11,10 @@ import java.io.Writer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * This class is used to parse HTML without using velocity
+ * @author jsanca
+ */
 public class RawTemplateProcessor implements InvalidateAware {
 
     private final Map<String, String> templateContentMap = new ConcurrentHashMap<>();

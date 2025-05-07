@@ -58,6 +58,7 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration);
 
+        // in case sign is need on request
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("auth.sign.request").toString()): false;
 
@@ -90,6 +91,7 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
 
         endpointContext.setEndpoint(this.samlCoreService.getIdentityProviderDestinationEndpoint(identityProviderConfiguration));
 
+        // this was made in other to have some kinda of tracking on the session, but not sure if it is useful
         final HttpSession session = request.getSession();
         session.setAttribute("dotsaml.login", true);
         final boolean needSignatureSigningParams = identityProviderConfiguration.containsOptionalProperty("auth.sign.params")?

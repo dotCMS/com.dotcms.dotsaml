@@ -3,7 +3,8 @@ package com.dotcms.saml.service.external;
 
 /**
  * Encapsulates constants for the dot SAML SP
- *
+ * Such as the StringUtils or Webkeys but in SAML
+ * Many of the default values are here
  * @author jsanca
  */
 

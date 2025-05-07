@@ -12,7 +12,7 @@ import java.io.Serializable;
 
 /**
  * A factory for the {@link AuthenticationHandler}
- * 
+ * By default it uses the Redirect AuthenticationHandler, by configuration can be also used POST or POST_RAW
  * @author jsanca
  */
 public class AuthenticationResolverHandlerFactory implements Serializable {
@@ -53,7 +53,7 @@ public class AuthenticationResolverHandlerFactory implements Serializable {
 				return new HttpRedirectAuthenticationHandler(this.samlCoreService, this.messageObserver, this.samlConfigurationService);
 			case DotSamlConstants.DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_POST:
 				return new HttpPOSTAuthenticationHandler(this.samlCoreService, this.velocityEngine, this.messageObserver);
-			case "Http-POST-Raw":  // todo: change this on new core change
+			case "Http-POST-Raw":
 				return new HttpPOSTRawAuthenticationHandler(this.samlCoreService, this.messageObserver);
 		}
 

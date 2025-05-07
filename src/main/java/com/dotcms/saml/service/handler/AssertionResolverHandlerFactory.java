@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A factory for the {@link AssertionResolverHandler}
+ * By default we only support POST messages from the IDP, but this factory allows to have more in the future.
  * 
  * @author jsanca
  */
