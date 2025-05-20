@@ -37,6 +37,33 @@ Note: this repository exists because open saml introduces many libraries and dep
 
 #### Plugin code: what is in charge of?
 
+The plugin code is in charge of the SAML Boilerplate, means the plugin deals with the open SAML libraries, creates the Metadata XML, 
+provides the methods to encrypt and decrypt, generate the XML request, process the assertion and retrieve the attributes, etc.
+
+#### Core code: what is in charge of?
+
+In core the SAML code is mostly related to:
+- Interact with the plugin
+- Intercept the url on dotCMS that does login/logout
+- Provides a set of endpoints where the IDP can Post the Login/Logout Assertion and generate the Metadata
+- Encapsulates the logic to create/update the user based on the configuration and the information on the assertion/attributes
+
+#### How to set up SAML locally against Azure server (this is the only IDP we have to test against)
+
+TBD
+
+#### How to deploy SAML plugin changes? Steps to do it.
+
+Daniel will fill up this section 
+
+#### Current SAML properties that we have? And what's the function of each?
+
+
+
+#### Explain why SAML evolution is an organic, why do we always have been reactive over customers requests.
+
+
+#### Add a flow diagram of the diff SAML classes and how they interact with each other.
 
 
 --------
