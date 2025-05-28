@@ -58,6 +58,10 @@ Daniel will fill up this section
 
 #### Current SAML properties that we have? And what's the function of each?
 
+- assertion.resolver.handler.classname: in case you want to override the AssertionResolverHandler (probably not) you can set here the classpath of the class
+- authn.protocol.binding: The binding for the auth request XML, such as Http-Redirect, Http-POST, Http-POST-Raw. Based on this value will use Redirect or Post to do the authentication request from dotCMS to the IDP
+- logout.service.endpoint.url: this is a callback to be called by the IDP when the logout happens on the IDP and needs to get back to dotCMS, it is usually set to "/dotAdmin/show-logout"
+- logout.okta.url: okta needs a special url instead of the IDP metadata XML to get logout, this is the url used in that particular case.
 
 
 #### Explain why SAML evolution is an organic, why do we always have been reactive over customers requests.
