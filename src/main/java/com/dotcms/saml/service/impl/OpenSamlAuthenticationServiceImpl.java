@@ -6,10 +6,10 @@ import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.saml.service.external.AdditionalInfoValue;
+import com.dotcms.saml.service.external.AdditionalInformationType;
 import com.dotcms.saml.service.external.AttributesNotFoundException;
 import com.dotcms.saml.service.external.NotNullEmailAllowedException;
-import com.dotcms.saml.service.external.SamlException;
-import com.dotcms.saml.service.external.SamlUnauthorizedException;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.service.handler.AuthenticationHandler;
@@ -19,49 +19,28 @@ import com.dotcms.saml.service.handler.LogoutResolverHandlerFactory;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
-import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
-import com.dotcms.saml.utils.SamlUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
+import com.dotmarketing.util.json.JSONObject;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
-import org.apache.xml.security.c14n.Canonicalizer;
 import org.opensaml.core.xml.XMLObject;
-import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
-import org.opensaml.core.xml.io.MarshallingException;
-import org.opensaml.messaging.context.MessageContext;
-import org.opensaml.messaging.encoder.MessageEncodingException;
-import org.opensaml.saml.common.messaging.context.SAMLEndpointContext;
-import org.opensaml.saml.common.messaging.context.SAMLPeerEntityContext;
-import org.opensaml.saml.saml2.binding.encoding.impl.HTTPRedirectDeflateEncoder;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Attribute;
 import org.opensaml.saml.saml2.core.AttributeStatement;
 import org.opensaml.saml.saml2.core.AuthnStatement;
-import org.opensaml.saml.saml2.core.LogoutRequest;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
-import org.opensaml.security.credential.Credential;
-import org.opensaml.xmlsec.SignatureSigningParameters;
-import org.opensaml.xmlsec.context.SecurityParametersContext;
-import org.opensaml.xmlsec.signature.KeyInfo;
-import org.opensaml.xmlsec.signature.Signature;
-import org.opensaml.xmlsec.signature.X509Certificate;
-import org.opensaml.xmlsec.signature.X509Data;
-import org.opensaml.xmlsec.signature.support.ConfigurableContentReference;
-import org.opensaml.xmlsec.signature.support.SignatureConstants;
-import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignerProviderImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Open Saml implementation
@@ -76,6 +55,7 @@ import java.util.Map;
  */
 public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationService {
 
+    public static final String ADDITIONAL_INFO = "additionalInfo";
     private final LogoutResolverHandlerFactory         logoutResolverHandlerFactory;
     private final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory;
     private final AssertionResolverHandlerFactory assertionResolverHandlerFactory;
@@ -328,6 +308,14 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         final String firstNameField = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_FIRSTNAME_ATTRIBUTE);
         final String lastNameField  = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_LASTNAME_ATTRIBUTE);
         final String rolesField     = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOT_SAML_ROLES_ATTRIBUTE);
+
+        // logic for the optional additional info
+        final Map<String, AdditionalInfoValue> additionalInfoMap = new HashMap<>();
+        final Map<String, Object> additionalAttributes = new HashMap<>();
+        if (identityProviderConfiguration.containsOptionalProperty(ADDITIONAL_INFO)) {
+            final String additionalInfoValue = (String) identityProviderConfiguration.getOptionalProperty(ADDITIONAL_INFO);
+            parseAdditionalInfoMap(additionalInfoMap, additionalInfoValue);
+        }
         // this is configuration when some of these props is null
         final String firstNameForNullValue = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,  SamlName.DOT_SAML_FIRSTNAME_ATTRIBUTE_NULL_VALUE);
         final String lastNameForNullValue  = this.samlConfigurationService.getConfigAsString(identityProviderConfiguration,  SamlName.DOT_SAML_LASTNAME_ATTRIBUTE_NULL_VALUE);
@@ -415,15 +403,30 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                         this.messageObserver.updateDebug(this.getClass().getName(), "Resolving attributes - roles : " + attribute);
                     } else {
 
-                        final String attributeName = attribute.getName();
-                        this.messageObserver.updateWarning(this.getClass().getName(),
-                                attributeName + " attribute did not match any user property in the idpConfig: " + customConfiguration);
+                        // in case the attribute do not match with any of the legacy props, lets try the additional information
+                        if (additionalInfoMap.containsKey(attribute.getName()) || additionalInfoMap.containsKey(attribute.getFriendlyName())) {
+
+                            final String key = Objects.isNull(attribute.getName())? attribute.getFriendlyName() : attribute.getName();
+                            final AdditionalInfoValue additionalInfoValue = additionalInfoMap.get(key);
+
+                            additionalAttributes.put(additionalInfoValue.getAliasKey(), parseValue (attribute, additionalInfoValue.getType()));
+                        } else {
+                            final String attributeName = attribute.getName();
+                            this.messageObserver.updateDebug(this.getClass().getName(),
+                                    attributeName + " attribute did not match any user property in the idpConfig: " + customConfiguration);
+                        }
                     }
                 });
             });
         }
 
         attrBuilder.sessionIndex(this.getSessionIndex(assertion));
+
+        this.messageObserver.updateInfo(this.getClass().getName(), "additionalAttributes: " + additionalAttributes);
+
+        if (additionalAttributes.size() > 0) {
+            attrBuilder.additionalAttributes(additionalAttributes);
+        }
 
         Attributes attributes = attrBuilder.build();
         this.messageObserver.updateDebug(this.getClass().getName(), "-> Value of attributesBean = " + attributes.toString());
@@ -432,6 +435,66 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.messageObserver.updateDebug(this.getClass().getName(), "-> Double Checked attributes = " + attributes);
 
         return attributes;
+    }
+
+    /**
+     * It parse something such as
+     * additionalInfo=prop1|single,prop2|collection,prop3|json|alias-for-json
+     *
+     * where prop1 is the attribute name and single means the type (single value in this case)
+     * in the same sense collection means an attributes collection and results as a List and Json is a single value but parsed as a JSON.
+     * Finally the third one on the prop3 (alias-for-json) is the key you want to use to replace whatever is on the assertion, you can replace for instance
+     * big azure namespa
+     *
+     * keep in mind that this sentence is equivalent to the previous one
+     * additionalInfo=prop1,prop2|collection,prop3|json|alias-for-json
+     *
+     * here prop1 is not being qualified under any type, so the default will be single.
+     *
+     * @param additionalInfoMap
+     * @param additionalInfoValue
+     */
+    protected void parseAdditionalInfoMap(final Map<String, AdditionalInfoValue> additionalInfoMap,
+                                          final String additionalInfoValue) {
+
+        final String [] additionalInfoConfigTokens = additionalInfoValue.split(StringPool.COMMA);
+        for (String additionalInfoConfigToken : additionalInfoConfigTokens) {
+
+            final String [] parsedAdditionalInfoConfigToken = additionalInfoConfigToken.split("\\"+StringPool.PIPE);
+            if (parsedAdditionalInfoConfigToken.length > 0) {
+
+                final AdditionalInformationType additionInformationType = (parsedAdditionalInfoConfigToken.length >= 2 &&
+                        Objects.nonNull(parsedAdditionalInfoConfigToken[1])) ?
+                        AdditionalInformationType.valueOf(parsedAdditionalInfoConfigToken[1].toUpperCase()) :
+                        AdditionalInformationType.SINGLE; // default if not qualified
+
+                final String key = (parsedAdditionalInfoConfigToken.length >= 3 &&
+                        Objects.nonNull(parsedAdditionalInfoConfigToken[2])) ?
+                        parsedAdditionalInfoConfigToken[2]:
+                        parsedAdditionalInfoConfigToken[0];
+
+                additionalInfoMap.put(parsedAdditionalInfoConfigToken[0], new AdditionalInfoValue(key, additionInformationType));
+             }
+        }
+    } //parseAdditionalInfoMap
+
+    /**
+     * Parse the attribute based on the previous given type
+     * @param attribute
+     * @param additionInformationType
+     * @return
+     */
+    private Object parseValue (final Attribute attribute, final AdditionalInformationType additionInformationType) {
+
+        switch (additionInformationType) {
+
+            case JSON:
+                return new JSONObject(attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue());
+            case COLLECTION:
+                return getValues(attribute);
+            default:
+                return attribute.getAttributeValues().get(0).getDOM().getFirstChild().getNodeValue();
+        }
     }
 
     private Attributes doubleCheckAttributes(final Attributes originalAttributes, final String firstNameField,
