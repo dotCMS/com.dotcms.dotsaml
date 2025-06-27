@@ -120,7 +120,7 @@ While we’ve documented improvement points and ideas to make the implementation
 
 #### Add a flow diagram of the diff SAML classes and how they interact with each other.
 
-
+![AuthenticationSequence Diagram](./diagrams/auth-request-sequence.svg)
 --------
 #### Change Log:
 - 25.04.28: added the ability to remove the RequestedAuthnContext from the auth
