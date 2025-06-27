@@ -100,6 +100,23 @@ Daniel will fill up this section
 - isassertion.encrypted: This is a boolean that indicates if the SAML assertion should be encrypted or not, it is usually set to false. If set to true, the SAML assertion will be encrypted using the public key of the SP, which can be useful for some IDPs that require it.
 #### Explain why SAML evolution is an organic, why do we always have been reactive over customers requests.
 
+The evolution of our SAML implementation has been organic because it started from a baseline that I designed based on best practices and common SAML flows described in the literature (e.g., handling GET/POST authentication, single logout, assertion consumption endpoints, and metadata generation/parsing).
+However, as different customers started integrating with our system, each brought unique configurations, requirements, and interpretations of the SAML specification.
+Some examples of areas where we had to adapt include:
+
+    Deciding when to enforce or skip signature validation
+
+    Supporting encrypted assertions
+
+    Handling optional attributes like RelayState or role mappings
+
+    Allowing empty assertions
+
+    Flexibly consuming varied IDP metadata formats
+
+This organic, reactive evolution was necessary because SAML, by nature, is highly flexible and allows for broad customization by each Identity Provider (IDP). Even two customers using the same IDP vendor (e.g., Okta, Azure AD) may have completely different SSO configurations.
+
+While we’ve documented improvement points and ideas to make the implementation more proactive and configurable, the reality is that customer-specific use cases and IDP diversity drive much of the ongoing development.
 
 #### Add a flow diagram of the diff SAML classes and how they interact with each other.
 
