@@ -62,8 +62,42 @@ Daniel will fill up this section
 - authn.protocol.binding: The binding for the auth request XML, such as Http-Redirect, Http-POST, Http-POST-Raw. Based on this value will use Redirect or Post to do the authentication request from dotCMS to the IDP
 - logout.service.endpoint.url: this is a callback to be called by the IDP when the logout happens on the IDP and needs to get back to dotCMS, it is usually set to "/dotAdmin/show-logout"
 - logout.okta.url: okta needs a special url instead of the IDP metadata XML to get logout, this is the url used in that particular case.
-
-
+- clock.skew: this is the clock skew in seconds, it is used to allow some time difference between the IDP and dotCMS servers, so if the IDP sends a SAML Assertion with a timestamp that is 5 seconds in the past, it will still be valid.
+- message.life.time: this is the time in seconds that the SAML message will be valid, after this time it will be considered expired.
+- auth.sign.request: this is a boolean that indicates if the SAML request should be signed or not, it is usually set to false.
+- auth.signature.reference.digestmethod.algorithm: this is the algorithm used to sign the SAML request, it is usually set to "http://www.w3.org/2001/04/xmlenc#sha256".
+- auth.sign.params: this is a boolean that indicates if the SAML request parameters should be signed or not, it is usually set to true.
+- auth.signature.algorithm: this is the algorithm used to sign the SAML request, it is usually set to "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".
+- logout.sign.request: this is a boolean that indicates if the SAML logout request should be signed or not, it is usually set to false.
+- logout.signature.reference.digestmethod.algorithm: this is the algorithm used to sign the SAML logout request, it is usually set to "http://www.w3.org/2001/04/xmlenc#sha256".
+- logout.sign.params: this is a boolean that indicates if the SAML logout request parameters should be signed or not, it is usually set to true.
+- logout.signature.algorithm: this is the algorithm used to sign the SAML logout request, it is usually set to "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".
+- location.cleanqueryparams: this is a boolean that indicates if the query parameters should be cleaned from the location URL, it is usually set to true.
+- logout.protocol.binding: this is the binding for the logout request XML, such as Http-Redirect, Http-POST, Http-Okta. Based on this value will use Redirect or Post to do the logout request from dotCMS to the IDP
+- verify.signature.credentials: this is a boolean that indicates if the SAML response signature should be verified or not, it is usually set to true.
+- verify.signature.profile: this is the profile used to verify the SAML response signature, it is usually set to "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".
+- idp.metadata.protocol: this is the protocol used to retrieve the IDP metadata, it is usually set to "urn:oasis:names:tc:SAML:2.0:protocol".
+- use.encrypted.descriptor: When setting the Key Descriptor in the IDP metadata, this property indicates if the Key Descriptor should be encrypted or not, it is usually set to false.
+- access.filter.values: Is a comma separeted list with exceptional cases to avoid SAML evaluation
+- logout.path.values: Is a comma separated list of paths that will be recognized as a logout (fires the logout request to SAML) by default this list urls: /c/portal/logout,/dotCMS/logout,/dotsaml/request/logout,/dotAdmin/logout
+- bindingtype: Used to set the binding type for the SAML request, such as Http-Redirect, Http-POST, Http-POST-Raw. Based on this value will use Redirect or Post to do the authentication/logout request from dotCMS to the IDP
+- attribute.email.name: this is the mapping for the email attribute in the SAML assertion, it is usually set to "mail".
+- attribute.firstname.name: this is the mapping for the first name attribute in the SAML assertion, it is usually set to "givenName".
+- attribute.lastname.name: this is the mapping for the last name attribute in the SAML assertion, it is usually set to "sn".
+- attribute.roles.name: this is the mapping for the roles attribute in the SAML assertion, it is usually set to "authorizations".
+- additionalInfo: this key allows to do the user additionl information mapping, it is a comma separated list of key=value pairs, such as "additionalInfo=prop1,prop2|collection,prop3|json|alias-for-json".
+- attribute.firstname.nullvalue: when the first name attribute is not present in the SAML assertion, this value will be used as a fallback, null by default.
+- attribute.lastname.nullvalue: when the last name attribute is not present in the SAML assertion, this value will be used as a fallback, null by default.
+- attribute.email.allownull: when the email attribute is not present in the SAML assertion, this value will be used as a fallback, true by default.
+- saml.allow.empty.attrs: when the SAML assertion does not contain any attributes, this value will be used to allow or not the user creation, true by default. if false and not attributes are present, an exception will be thrown.
+- protocol.binding: This is the actual value to fill the binding on the authentication XML request, it is usually set to "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" but it can be set to "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" or "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-Raw" depending on the IDP configuration.
+- skip.request.authn.context: This is a boolean that indicates if the RequestedAuthnContext should be skipped or not, it is usually set to false. If set to true, the SAML request will not include the RequestedAuthnContext element, which can be useful for some IDPs that do not support it, usually this is set when wants to ask to credentials in some IDP, in any login.
+- force.authn: This is a boolean that indicates if the SAML request should force the authentication or not, it is usually set to false. If set to true, the SAML request will include the ForceAuthn attribute, which can be useful for some IDPs that require it.
+- policy.allowcreate: This is a boolean that indicates if the SAML request should allow the creation of the user or not, it is usually set to false. If set to true, the SAML request will include the AllowCreate attribute, which can be useful for some IDPs that do not support it.
+- nameidpolicy.format: This is the format of the NameIDPolicy element in the SAML request, it is usually set to "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress". This value can be changed to other formats such as "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent" (default) or "urn:oasis:names:tc:SAML:2.0:nameid-format:transient" depending on the IDP configuration.
+- authn.context.class.ref: This is the class reference of the AuthnContext element in the SAML request, it is usually set to "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport". This value can be changed to other classes such as "urn:oasis:names:tc:SAML:2.0:ac:classes:X509" or "urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos" depending on the IDP configuration.
+- authn.comparisontype: This is the comparison type of the AuthnContext element in the SAML request, it is usually set to "minimum". This value can be changed to "exact" or "maximum" or "better" depending on the IDP configuration.
+- isassertion.encrypted: This is a boolean that indicates if the SAML assertion should be encrypted or not, it is usually set to false. If set to true, the SAML assertion will be encrypted using the public key of the SP, which can be useful for some IDPs that require it.
 #### Explain why SAML evolution is an organic, why do we always have been reactive over customers requests.
 
 
