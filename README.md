@@ -439,56 +439,6 @@ While we’ve documented improvement points and ideas to make the implementation
 
 ![AuthenticationSequence Diagram](./diagrams/auth-request-sequence.svg)
 
----
-
-### Requirements
-
-- **Java 21** (required by dotCMS 26.x)
-- **Maven 3.9+** (or use the included Maven wrapper `./mvnw`)
-
-### Building the Plugin
-
-This plugin uses Maven with the `maven-bundle-plugin` to produce an OSGi bundle.
-
-```bash
-# Build the plugin (skip tests)
-./mvnw clean package -DskipTests
-
-# Build with tests
-./mvnw clean package
-```
-
-The output bundle JAR is generated at:
-```
-target/com.dotcms.samlbundle-<version>.jar
-```
-
-### Deploying the Plugin
-
-Starting with dotCMS 26.x, plugins use **exported packages** instead of fragments. This means only the single bundle JAR needs to be deployed — there is no separate fragment JAR.
-
-#### For dotCMS Cloud
-The plugin deployment is handled by the dotCMS support team.
-
-#### For Self-Hosted dotCMS
-1. Build the plugin: `./mvnw clean package -DskipTests`
-2. Upload the bundle JAR (`target/com.dotcms.samlbundle-<version>.jar`) via the dotCMS **Dynamic Plugins** admin portlet, or copy it to the `felix/load` directory in your dotCMS installation.
-3. Verify the plugin is active in the Dynamic Plugins portlet.
-
-### Upgrading from Previous Versions
-
-If you are upgrading from a version that used Gradle (25.x and earlier):
-
-| Before (Gradle / Java 8) | After (Maven / Java 21) |
-|---------------------------|-------------------------|
-| `./gradlew jar` | `./mvnw clean package -DskipTests` |
-| `build/libs/com.dotcms.samlbundle-*.jar` | `target/com.dotcms.samlbundle-*.jar` |
-| Requires deploying **plugin JAR + fragment JAR** | Only the **single bundle JAR** is needed |
-| Java 8 | Java 21 |
-
-> **Note:** The fragment JAR (`com.dotcms.samlbundle.fragment-*.jar`) is no longer generated or needed. If you had a previous fragment deployed, remove it from your dotCMS instance.
-
----
 
 #### Change Log:
 - 26.03.17: migrated from Gradle to Maven, Java 21, removed fragment JAR generation
