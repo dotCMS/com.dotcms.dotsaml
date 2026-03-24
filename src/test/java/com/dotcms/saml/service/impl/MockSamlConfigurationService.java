@@ -47,6 +47,12 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
     }
 
     @Override
+    public Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName, Supplier<Boolean> supplier) {
+        final Boolean result = getConfigAsBoolean(identityProviderConfiguration, samlName);
+        return result != null ? result : (supplier != null ? supplier.get() : false);
+    }
+
+    @Override
     public String[] getConfigAsArrayString(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName) {
         return new String[0];
     }
