@@ -373,12 +373,6 @@
             <artifactId>dotcms-core</artifactId>
             <version>26.03.17-01</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
