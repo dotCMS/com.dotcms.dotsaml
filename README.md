@@ -12,8 +12,7 @@ For more information on how to configure SAML in dotCMS, see the documentation h
 - SAML is a protocol based on XML (Security Assertion Markup Language), for SSO (Single Sign On).
 - Users authenticate once and gain access to multiple applications without re-entering credentials.
 - May handle roles and authorizations.
-  
-  .
+
 - SAML could breakdown in two parts:
   - Identity Provider (IdP): This is the source of truth and it is in charge of the authentication, examples: Okta, Azure, etc.
   - Service Provider (SP): This is the app, the web site in this case dotCMS.
