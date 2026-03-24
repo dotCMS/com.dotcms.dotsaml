@@ -9,7 +9,7 @@ For more information on how to configure SAML in dotCMS, see the documentation h
 
 ### What is SAML and how it works in dotCMS?
 
-- SAML is a protocol based on XML (Security Assertion Markup Language), do to SSO (Single Sign On)
+- SAML is a protocol based on XML (Security Assertion Markup Language), for SSO (Single Sign On).
 - Users authenticate once and gain access to multiple applications without re-entering credentials.
 - May handle roles and authorizations.
   

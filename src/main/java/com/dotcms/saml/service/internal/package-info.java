@@ -1,5 +1,5 @@
 /**
- * This package contains some utils classes for encryption, XML and some saml stuff
+ * This package contains some utility classes for encryption, XML, and SAML functionalities
  *
  * @since 1.0
  * @version 1.2
