@@ -342,7 +342,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.messageObserver.updateDebug(this.getClass().getName(),
                 "Resolving attributes - Name ID : " + assertion.getSubject().getNameID().getValue());
 
-        attrBuilder.nameID(new SamlNameID(SamlUtils.toXMLObjectString(assertion.getSubject().getNameID())));
+        final org.opensaml.saml.saml2.core.NameID rawNameID = assertion.getSubject().getNameID();
+        attrBuilder.nameID(new SamlNameID(SamlUtils.toXMLObjectString(rawNameID), rawNameID.getValue()));
 
         this.messageObserver.updateDebug(this.getClass().getName(),
                 "Elements of type AttributeStatement in assertion : " + assertion.getAttributeStatements().size());
@@ -687,7 +688,10 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
     @Override
     public String getValue(final Object samlObject) {
 
-        if (samlObject instanceof NameID) {
+        if (samlObject instanceof SamlNameID) {
+
+            return ((SamlNameID) samlObject).getValue();
+        } else if (samlObject instanceof NameID) {
 
             return NameID.class.cast(samlObject).getValue();
         } else if (samlObject instanceof XMLObject) {
