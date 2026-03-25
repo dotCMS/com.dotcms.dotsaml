@@ -6,6 +6,7 @@ import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.saml.SamlNameID;
 import com.dotcms.saml.service.external.AdditionalInfoValue;
 import com.dotcms.saml.service.external.AdditionalInformationType;
 import com.dotcms.saml.service.external.AttributesNotFoundException;
@@ -20,6 +21,7 @@ import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
+import com.dotcms.saml.utils.SamlUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
@@ -191,7 +193,8 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
             this.messageObserver.updateError(this.getClass().getName(), e.getMessage(), e);
         } catch (Exception e) {
 
-            final String nameID = null != attributes? NameID.class.cast(attributes.getNameID()).getValue(): StringUtils.EMPTY ;
+            final String nameID = null != attributes && attributes.getNameID() instanceof SamlNameID
+                    ? SamlUtils.toNameID((SamlNameID) attributes.getNameID()).getValue() : StringUtils.EMPTY;
             this.messageObserver.updateError(this.getClass().getName(),
                     "An error occurred when loading user with ID '" + nameID+ "'", e);
         }
@@ -339,7 +342,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         this.messageObserver.updateDebug(this.getClass().getName(),
                 "Resolving attributes - Name ID : " + assertion.getSubject().getNameID().getValue());
 
-        attrBuilder.nameID(assertion.getSubject().getNameID());
+        attrBuilder.nameID(new SamlNameID(SamlUtils.toXMLObjectString(assertion.getSubject().getNameID())));
 
         this.messageObserver.updateDebug(this.getClass().getName(),
                 "Elements of type AttributeStatement in assertion : " + assertion.getAttributeStatements().size());
@@ -517,7 +520,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
 
         if (StringUtils.isBlank((originalAttributes.getEmail()))) {
 
-            final NameID nameID = (NameID) originalAttributes.getNameID();
+            final NameID nameID = SamlUtils.toNameID((SamlNameID) originalAttributes.getNameID());
             attrBuilder.email(this.createNoReplyEmail(nameID.getValue(), allowNullEmail));
         } else {
 

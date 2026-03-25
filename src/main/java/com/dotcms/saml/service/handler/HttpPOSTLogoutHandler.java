@@ -1,6 +1,7 @@
 package com.dotcms.saml.service.handler;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.SamlNameID;
 import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPPOSTDeflateEncoder;
@@ -63,7 +64,7 @@ public class HttpPOSTLogoutHandler implements LogoutHandler {
 
         final MessageContext context      = new MessageContext(); // main context
         final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(
-                identityProviderConfiguration, NameID.class.cast(nameID), sessionIndexValue);
+                identityProviderConfiguration, SamlUtils.toNameID((SamlNameID) nameID), sessionIndexValue);
 
         // Similar to the AuthRequest, logout request can be sign
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("logout.sign.request")?
