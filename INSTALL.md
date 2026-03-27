@@ -18,19 +18,22 @@ dotCMS requirements:
 - There needs to be a default site, if there are none the plugin won't work.
 - A healthy index is required so the plugin can be configured and work properly.
 
-**IMPORTANT:** Please notice this plugin works on *dotCMS 5.1.6* and *Tomcat 8.5.32*
+**IMPORTANT:** Starting with version 26.x, this plugin requires *Java 21* and *dotCMS 26.x*. For older dotCMS versions (25.x and earlier), use the corresponding plugin version built with Gradle and Java 8.
 
 ## Installing the plugin
 For dotCMS cloud clients this part is done by dotCMS support team.
 #### 1. Get the right version
 Download the required version of the plugin from [the repo](https://github.com/dotCMS/plugin-com.dotcms.dotsaml). Checkout the latest [tag](https://github.com/dotCMS/plugin-com.dotcms.dotsaml/tree/5.x).
 
-#### 2. Deploy plugin
-* Copy the **plugin** tarball to `/plugins` in the dotCMS installation
-* Uncompress the file (no need to change plugin’s folder name)
-* Re-deploy the plugins (stop, deploy plugins and start dotCMS)
+#### 2. Build the plugin
+* Build with Maven: `./mvnw clean package -DskipTests`
+* The bundle JAR is generated at `target/com.dotcms.samlbundle-<version>.jar`
 
-#### 3. Add the SAML Configuration portlet
+#### 3. Deploy plugin
+* Upload the bundle JAR via the dotCMS **Dynamic Plugins** admin portlet, or copy it to the `felix/load` directory in your dotCMS installation.
+* If upgrading from a previous version, remove any old fragment JAR (`com.dotcms.samlbundle.fragment-*.jar`) — fragments are no longer used.
+
+#### 4. Add the SAML Configuration portlet
 * Log into de backend
 * Go to System>Roles & Tools
 * Search for and select “CMS Administrator”
@@ -114,7 +117,7 @@ Once that the idP admin has provided the idP Metadata, proceed to following step
 ## Test
 * From a different browser session, try to log into the backend via hostname of one of the sites you associated to the SAML (did this previously)
 * Instead of being redirected to the dotCMS default login page, you should hit the IdP login page
-* Monitor `dotcms-saml.log` (inside dotCMS’s log directory) for specific messages related to SAML authentication. Check out the `/ROOT/dotserver/tomcat-8.5.32/webapps/ROOT/WEB-INF/log4j/log4j2.xml` file for details on how to configure this log file.
+* Monitor `dotcms-saml.log` (inside dotCMS’s log directory) for specific messages related to SAML authentication. Check out the `log4j/log4j2.xml` file in your dotCMS installation for details on how to configure this log file.
 
 ---
 

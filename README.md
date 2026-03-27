@@ -1,4 +1,4 @@
-## SAML OSGI bundle for dotCMS 
+## SAML OSGI bundle for dotCMS
 
 ![Screen Shot 2020-10-16 at 11 23 22 AM](https://user-images.githubusercontent.com/934364/96277374-2e400c00-0fa2-11eb-97bc-dd564312c802.png)
 
@@ -260,8 +260,8 @@ In core the SAML code is mostly related to:
 The SAML plugin is a **system plugin** in dotCMS — it is already included in the dotCMS Docker image and is deployed automatically on startup. Users do not deploy the plugin directly. When changes are made to the plugin, the process involves building and testing with a SNAPSHOT version first, then publishing a release version to the dotCMS artifact repository and updating the version reference in dotCMS core.
 
 #### Prerequisites
-- JDK 11 or higher installed
-- Gradle installed (or use the Gradle wrapper included in the project)
+- JDK 21 or higher installed
+- Maven 3.9+ installed (or use the Maven wrapper included in the project)
 - Git access to this repository
 - Access to the dotCMS core repository
 - A user account with deploy permissions to the dotCMS Maven repository (https://repo.dotcms.com/artifactory/) — only needed for publishing release versions or sharing snapshots with other developers
@@ -276,50 +276,38 @@ The SAML plugin is a **system plugin** in dotCMS — it is already included in t
 
 2. **Make your changes** to the plugin as needed
 
-3. **Set a SNAPSHOT version** in the `build.gradle` file:
-   ```groovy
-   version = '25.04.28-SNAPSHOT'
+3. **Set a SNAPSHOT version** in the `pom.xml` file:
+   ```xml
+   <version>26.03.17-SNAPSHOT</version>
    ```
    Using a SNAPSHOT version is the standard practice when working across multiple artifacts (plugin + dotCMS app) simultaneously. It signals that this is a development version under active testing.
 
 4. **Build the plugin JAR**
    ```bash
-   ./gradlew jar
+   ./mvnw clean package -DskipTests
    ```
 
 5. **Verify the build**
-   - The build produces two JARs in `build/libs/`:
-     - A **bundle fragment** (to expose needed package dependencies from dotCMS)
+   - The build produces a single bundle JAR in `target/`:
      - The **plugin JAR** (`com.dotcms.samlbundle-X.X.X-SNAPSHOT.jar`)
-   - Currently, there are no additional required dependencies from dotCMS other than those already included in the dotCMS Exported Packages list, so the fragment is not required to be deployed.
+   - Starting with dotCMS 26.x, plugins use exported packages instead of fragments, so no separate fragment JAR is needed.
 
 #### Step 2: Install the SNAPSHOT Locally and Test
 
 For local development, you do **not** need to deploy the SNAPSHOT to the remote repository. Install it to your local Maven repository instead:
 
 ```bash
-mvn install:install-file \
-  -DgroupId=com.dotcms.samlbundle \
-  -DartifactId=com.dotcms.samlbundle \
-  -Dversion=25.04.28-SNAPSHOT \
-  -Dpackaging=jar \
-  -Dfile=build/libs/com.dotcms.samlbundle-25.04.28-SNAPSHOT.jar
+./mvnw install -DskipTests
 ```
 
 Then, in the dotCMS core repository, update the SAML plugin dependency in `osgi-base/system-bundles/pom.xml` to use the SNAPSHOT version:
 
 ```xml
 <dependency>
-    <groupId>com.dotcms.samlbundle</groupId>
+    <groupId>com.dotcms</groupId>
     <artifactId>com.dotcms.samlbundle</artifactId>
-    <version>25.04.28-SNAPSHOT</version>
+    <version>26.03.17-SNAPSHOT</version>
     <scope>provided</scope>
-    <exclusions>
-        <exclusion>
-            <groupId>*</groupId>
-            <artifactId>*</artifactId>
-        </exclusion>
-    </exclusions>
 </dependency>
 ```
 
@@ -336,14 +324,14 @@ Now build and run your dotCMS instance locally to test:
 
 Once your changes are tested and working, create the release version:
 
-1. **Update the version** in `build.gradle` to remove the `-SNAPSHOT` suffix:
-   ```groovy
-   version = '25.04.28'
+1. **Update the version** in `pom.xml` to remove the `-SNAPSHOT` suffix:
+   ```xml
+   <version>26.03.17</version>
    ```
 
 2. **Rebuild the plugin JAR**
    ```bash
-   ./gradlew jar
+   ./mvnw clean package -DskipTests
    ```
 
 3. **Configure your Maven credentials** (if not already done)
@@ -364,11 +352,11 @@ Once your changes are tested and working, create the release version:
 4. **Deploy the release JAR** to the dotCMS artifact repository:
    ```bash
    mvn deploy:deploy-file \
-     -DgroupId=com.dotcms.samlbundle \
+     -DgroupId=com.dotcms \
      -DartifactId=com.dotcms.samlbundle \
-     -Dversion=25.04.28 \
+     -Dversion=26.03.17 \
      -Dpackaging=jar \
-     -Dfile=build/libs/com.dotcms.samlbundle-25.04.28.jar \
+     -Dfile=target/com.dotcms.samlbundle-26.03.17.jar \
      -DrepositoryId=dotcms-libs \
      -Durl=https://repo.dotcms.com/artifactory/libs-release
    ```
@@ -377,7 +365,7 @@ Once your changes are tested and working, create the release version:
 
 1. **Update the version** in the dotCMS core repository's `osgi-base/system-bundles/pom.xml` to point to the release version:
    ```xml
-   <version>25.04.28</version>
+   <version>26.03.17</version>
    ```
 
 2. **Commit your change** to a feature branch in the core repository
@@ -450,8 +438,9 @@ While we’ve documented improvement points and ideas to make the implementation
 ### Flow diagram of the diff SAML classes and how they interact with each other
 
 ![AuthenticationSequence Diagram](./diagrams/auth-request-sequence.svg)
---------
-### Change Log:
 
+
+#### Change Log:
+- 26.03.17: migrated from Gradle to Maven, Java 21, removed fragment JAR generation
 - 25.04.28: added the ability to remove the RequestedAuthnContext from the auth
 

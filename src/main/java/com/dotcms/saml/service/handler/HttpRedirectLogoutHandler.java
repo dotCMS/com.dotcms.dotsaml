@@ -1,6 +1,7 @@
 package com.dotcms.saml.service.handler;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotcms.saml.SamlNameID;
 import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
@@ -54,7 +55,7 @@ public class HttpRedirectLogoutHandler implements LogoutHandler {
 
         final MessageContext context      = new MessageContext(); // main context
         final LogoutRequest logoutRequest = this.samlCoreService.buildLogoutRequest(
-                identityProviderConfiguration, NameID.class.cast(nameID), sessionIndexValue);
+                identityProviderConfiguration, SamlUtils.toNameID((SamlNameID) nameID), sessionIndexValue);
 
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("logout.sign.request")?
                 Boolean.parseBoolean(identityProviderConfiguration.getOptionalProperty("logout.sign.request").toString()): false;

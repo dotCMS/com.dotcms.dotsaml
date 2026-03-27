@@ -12,8 +12,9 @@ import java.security.cert.Certificate;
 
 public class MockIdentityProviderConfigurationFactory implements IdentityProviderConfigurationFactory {
 
-    private static final KeyPair KEY_PAIR        = MockSecurityUtils.generateKeyPair();
-    private static final Certificate CERTIFICATE = MockSecurityUtils.generateCertificate(KEY_PAIR);
+    private static final MockSecurityUtils.CertAndKeyPair CERT_AND_KEY = MockSecurityUtils.generateCertAndKeyPair();
+    private static final KeyPair KEY_PAIR        = CERT_AND_KEY.keyPair;
+    private static final Certificate CERTIFICATE = CERT_AND_KEY.certificate;
 
     @Override
     public IdentityProviderConfiguration findIdentityProviderConfigurationById(String s) {

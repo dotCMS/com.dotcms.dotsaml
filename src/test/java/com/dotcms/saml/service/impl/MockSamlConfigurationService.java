@@ -25,8 +25,8 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
                 return "false";
             case DOTCMS_SAML_BINDING_TYPE:
                 return "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
-
-                //urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect -> https://test.dotcms.com/o/saml2/idp/logout?idpid=xxx
+            case DOTCMS_SAML_AUTHN_CONTEXT_CLASS_REF:
+                return "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport";
         }
         return null;
     }
@@ -44,6 +44,12 @@ public class MockSamlConfigurationService implements SamlConfigurationService {
                 return false;
         }
         return false;
+    }
+
+    @Override
+    public Boolean getConfigAsBoolean(IdentityProviderConfiguration identityProviderConfiguration, SamlName samlName, Supplier<Boolean> supplier) {
+        final Boolean result = getConfigAsBoolean(identityProviderConfiguration, samlName);
+        return result != null ? result : (supplier != null ? supplier.get() : false);
     }
 
     @Override
