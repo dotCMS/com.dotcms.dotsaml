@@ -6,7 +6,7 @@
 
     <groupId>com.dotcms.samlbundle</groupId>
     <artifactId>com.dotcms.samlbundle</artifactId>
-    <version>26.03.17</version>
+    <version>26.08.21</version>
     <packaging>bundle</packaging>
 
     <name>dotCMS SAML Plugin</name>
