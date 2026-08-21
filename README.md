@@ -278,7 +278,7 @@ The SAML plugin is a **system plugin** in dotCMS — it is already included in t
 
 3. **Set a SNAPSHOT version** in the `pom.xml` file:
    ```xml
-   <version>26.03.17-SNAPSHOT</version>
+   <version>26.08.21-SNAPSHOT</version>
    ```
    Using a SNAPSHOT version is the standard practice when working across multiple artifacts (plugin + dotCMS app) simultaneously. It signals that this is a development version under active testing.
 
@@ -306,7 +306,7 @@ Then, in the dotCMS core repository, update the SAML plugin dependency in `osgi-
 <dependency>
     <groupId>com.dotcms</groupId>
     <artifactId>com.dotcms.samlbundle</artifactId>
-    <version>26.03.17-SNAPSHOT</version>
+    <version>26.08.21-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -326,7 +326,7 @@ Once your changes are tested and working, create the release version:
 
 1. **Update the version** in `pom.xml` to remove the `-SNAPSHOT` suffix:
    ```xml
-   <version>26.03.17</version>
+   <version>26.08.21</version>
    ```
 
 2. **Rebuild the plugin JAR**
@@ -354,9 +354,9 @@ Once your changes are tested and working, create the release version:
    mvn deploy:deploy-file \
      -DgroupId=com.dotcms \
      -DartifactId=com.dotcms.samlbundle \
-     -Dversion=26.03.17 \
+     -Dversion=26.08.21 \
      -Dpackaging=jar \
-     -Dfile=target/com.dotcms.samlbundle-26.03.17.jar \
+     -Dfile=target/com.dotcms.samlbundle-26.08.21.jar \
      -DrepositoryId=dotcms-libs \
      -Durl=https://repo.dotcms.com/artifactory/libs-release
    ```
@@ -365,7 +365,7 @@ Once your changes are tested and working, create the release version:
 
 1. **Update the version** in the dotCMS core repository's `osgi-base/system-bundles/pom.xml` to point to the release version:
    ```xml
-   <version>26.03.17</version>
+   <version>26.08.21</version>
    ```
 
 2. **Commit your change** to a feature branch in the core repository
@@ -441,6 +441,7 @@ While we’ve documented improvement points and ideas to make the implementation
 
 
 #### Change Log:
+- 26.08.21: upgraded Bouncy Castle 1.54 -> 1.85 (CVE-2026-59638), bumped dotcms-core to 26.03.27-01
 - 26.03.17: migrated from Gradle to Maven, Java 21, removed fragment JAR generation
 - 25.04.28: added the ability to remove the RequestedAuthnContext from the auth
 

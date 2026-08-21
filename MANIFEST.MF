@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Plugin-Name: SAML Plugin
-Plugin-Version: 26.03.17
+Plugin-Version: 26.08.21
 Author: dotCMS
