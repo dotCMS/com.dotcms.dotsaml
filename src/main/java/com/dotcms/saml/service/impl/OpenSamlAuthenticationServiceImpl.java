@@ -11,6 +11,7 @@ import com.dotcms.saml.service.external.AdditionalInfoValue;
 import com.dotcms.saml.service.external.AdditionalInformationType;
 import com.dotcms.saml.service.external.AttributesNotFoundException;
 import com.dotcms.saml.service.external.NotNullEmailAllowedException;
+import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
 import com.dotcms.saml.service.handler.AssertionResolverHandlerFactory;
 import com.dotcms.saml.service.handler.AuthenticationHandler;
@@ -20,6 +21,7 @@ import com.dotcms.saml.service.handler.LogoutResolverHandlerFactory;
 import com.dotcms.saml.service.init.Initializer;
 import com.dotcms.saml.service.internal.MetaDescriptorService;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.utils.EndpointHostRedirect;
 import com.dotcms.saml.utils.MetaDataXMLPrinter;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -37,6 +39,7 @@ import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -137,11 +140,36 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
                                final HttpServletResponse response,
                                final IdentityProviderConfiguration identityProviderConfiguration, final String relayState) {
 
+        // start the login on the host the IdP posts back to, so the request-binding cookie comes back with it
+        try {
+
+            if (EndpointHostRedirect.redirectIfNeeded(request, response,
+                    this.getAssertionConsumerUrl(request, identityProviderConfiguration))) {
+
+                this.messageObserver.updateDebug(this.getClass().getName(), "Login for IdP '"
+                        + identityProviderConfiguration.getIdpName() + "' started on another host; redirected to the endpoint host");
+                return;
+            }
+        } catch (IOException e) {
+
+            throw new SamlException("Could not redirect the login to the Service Provider Endpoint Hostname", e);
+        }
 
         final AuthenticationHandler authenticationHandler =
                 this.authenticationResolverHandlerFactory.getAuthenticationHandlerForSite(identityProviderConfiguration);
 
         authenticationHandler.handle(request, response, identityProviderConfiguration, relayState);
+    }
+
+    /** The configured assertion consumer URL, or null when it can't be built (the handler then reports it). */
+    private String getAssertionConsumerUrl(final HttpServletRequest request,
+                                           final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        try {
+            return this.samlCoreService.getAssertionConsumerEndpoint(request, identityProviderConfiguration);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /**

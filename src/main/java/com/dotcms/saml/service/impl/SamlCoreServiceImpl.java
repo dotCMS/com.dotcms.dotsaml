@@ -8,6 +8,7 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.CredentialProvider;
 import com.dotcms.saml.service.internal.CredentialService;
 import com.dotcms.saml.service.internal.EndpointService;
+import com.dotcms.saml.service.external.SamlConstants;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.SamlCoreService;
@@ -15,15 +16,20 @@ import com.dotcms.saml.utils.EncryptedAssertionDecrypter;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotcms.saml.utils.SignatureUtils;
+import com.dotmarketing.util.Logger;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.exceptions.XMLSecurityException;
+import org.apache.xml.security.signature.SignedInfo;
+import org.apache.xml.security.signature.XMLSignature;
 import org.joda.time.DateTime;
 import org.opensaml.core.criterion.EntityIdCriterion;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.SAMLVersion;
+import org.opensaml.saml.common.SignableSAMLObject;
 import org.opensaml.saml.common.xml.SAMLConstants;
 import org.opensaml.saml.saml2.core.ArtifactResponse;
 import org.opensaml.saml.saml2.core.Assertion;
@@ -52,6 +58,9 @@ import org.opensaml.xmlsec.encryption.EncryptedKey;
 import org.opensaml.xmlsec.encryption.support.DecryptionException;
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver;
 import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
+import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.impl.SignatureImpl;
+import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.DOMException;
@@ -63,9 +72,12 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
@@ -85,6 +97,19 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	private static final Map<String, Credential>  credentialMap      = new ConcurrentHashMap<>();
 	private static final Map<String, Credential>  idpCredentialMap   = new ConcurrentHashMap<>();
 	public static final String SKIP_REQUEST_AUTHN_CONTEXT = "skip.request.authn.context";
+
+	private static final Set<String> ALLOWED_SIGNATURE_ALGORITHMS = Set.of(
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA384,
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512);
+
+	private static final Set<String> ALLOWED_DIGEST_ALGORITHMS = Set.of(
+			SignatureConstants.ALGO_ID_DIGEST_SHA256,
+			SignatureConstants.ALGO_ID_DIGEST_SHA384,
+			SignatureConstants.ALGO_ID_DIGEST_SHA512);
 
 	private final CredentialService credentialService;
 	private final EndpointService endpointService;
@@ -517,7 +542,8 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	}
 
 	/**
-	 * Get the Assertion decrypted
+	 * Get the Assertion decrypted. The response must carry exactly one assertion, in the form
+	 * (encrypted or not) the configuration expects; anything else is rejected rather than picking one.
 	 *
 	 * @param response {@link Response}
 	 * @param identityProviderConfiguration  {@link IdentityProviderConfiguration}
@@ -528,20 +554,23 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	public Assertion getAssertion(final Response response,
 								  final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		final EncryptedAssertion encryptedAssertion;
-		Assertion assertion = null;
+		final int plainAssertions     = response.getAssertions().size();
+		final int encryptedAssertions = response.getEncryptedAssertions().size();
+		final boolean expectEncrypted = this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
+				SamlName.DOTCMS_SAML_IS_ASSERTION_ENCRYPTED);
 
-		if (this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
-				SamlName.DOTCMS_SAML_IS_ASSERTION_ENCRYPTED)) {
+		if (plainAssertions + encryptedAssertions != 1 || (expectEncrypted ? encryptedAssertions : plainAssertions) != 1) {
 
-			encryptedAssertion = response.getEncryptedAssertions().get(0);
-			assertion = this.decryptAssertion(encryptedAssertion, identityProviderConfiguration);
-		} else {
-
-			assertion = response.getAssertions().get(0);
+			final String message = "The SAML Response for IdP '" + identityProviderConfiguration.getIdpName()
+					+ "' must contain exactly one " + (expectEncrypted ? "encrypted" : "unencrypted")
+					+ " assertion, found " + plainAssertions + " unencrypted and " + encryptedAssertions + " encrypted";
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), message);
+			throw new SamlException(message);
 		}
 
-		return assertion;
+		return expectEncrypted?
+				this.decryptAssertion(response.getEncryptedAssertions().get(0), identityProviderConfiguration):
+				response.getAssertions().get(0);
 	}
 
 	/**
@@ -586,10 +615,9 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		final EncryptedKey key       = this.findEncryptedKey(encryptedAssertion);
 		final Decrypter keyDecrypter = new Decrypter(null, keyInfoCredentialResolver, null);
 
-		this.messageObserver.updateInfo(this.getClass().getName(), "Credential: " + credential
-				+ ", key: " + key + ", Algorithm" + encryptedAssertion.getEncryptedData().
-				getEncryptionMethod().getAlgorithm() + ", credential.getPrivateKey(): " + credential.getPrivateKey() +
-				", encryptedAssertion: " + encryptedAssertion);
+		// never log the credential's private key
+		this.messageObserver.updateDebug(this.getClass().getName(), "Decrypting assertion, algorithm: "
+				+ encryptedAssertion.getEncryptedData().getEncryptionMethod().getAlgorithm());
 
 		try {
 
@@ -597,7 +625,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			final SecretKey decryptKey = (SecretKey) keyDecrypter.decryptKey(key, encryptedAssertion.getEncryptedData().
 					getEncryptionMethod().getAlgorithm());
 
-			this.messageObserver.updateInfo(this.getClass().getName(), "decryptKey: " + decryptKey);
+			this.messageObserver.updateDebug(this.getClass().getName(), "Assertion key decrypted");
 			assertion = new EncryptedAssertionDecrypter(this.messageObserver).decrypt(encryptedAssertion, decryptKey);
 		} catch (DecryptionException | IllegalArgumentException | DOMException e) {
 
@@ -674,73 +702,178 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		return assertion;
 	}*/
 
-	private void validateSignature(final Assertion assertion, final Collection<Credential> credentials)
-			throws SignatureException {
-		
+	/**
+	 * Validates the signature against the IdP signing credentials from the metadata, or the configured IdP
+	 * credential when the metadata has none. Throws when no credential validates it.
+	 */
+	private void validateSignature(final Signature signature, final String elementName,
+								   final IdentityProviderConfiguration identityProviderConfiguration) throws SignatureException {
+
+		final Collection<Credential> signingCredentials = this.metaDataService.getSigningCredentials(identityProviderConfiguration);
+		final Collection<Credential> credentials = null != signingCredentials && !signingCredentials.isEmpty()?
+				signingCredentials: Collections.singletonList(getIdPCredentials(identityProviderConfiguration));
+
 		for (final Credential credential : credentials) {
+
+			if (null == credential) {
+				continue;
+			}
+
 			try {
 
-				SignatureValidator.validate(assertion.getSignature(), credential);
+				SignatureValidator.validate(signature, credential);
 				return;
 			} catch (SignatureException ignore) {
 
 				try {
 
-					SignatureUtils.validate(assertion.getSignature(), credential);
+					SignatureUtils.validate(signature, credential);
 					return;
 				} catch (SignatureException ignoreToo) {
 
 					this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
-							"Signature Validation failed with provided credential (ignore?): " +
-							ignore.getMessage());
+							"Signature Validation failed with provided credential: " + ignore.getMessage());
 				}
 			}
 		}
 
-
-
-		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Couldn't find any valid credential to validate the assertion signature");
-		throw new SignatureException("Assertion Signature cannot be validated");
-	}
-
-	private void validateSignature(final Response response, final Collection<Credential> credentials)
-			throws SignatureException {
-
-		this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
-				"Validating Signature - Credentials " + ((credentials != null) ? "are present" : "are null"));
-		this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
-				"Validating Signature - Credentials " + ((response != null) ? "are present" : "are null"));
-
-		for (final Credential credential : credentials) {
-
-			try {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating Signature - Credential " +
-						((credential != null) ? "is present" : "is null"));
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating Signature - response.getSignature " +
-						((response.getSignature() != null)?"is present" : "is null"));
-
-				SignatureValidator.validate(response.getSignature(), credential);
-				return;
-			} catch (SignatureException ignore) {
-
-				try {
-
-					SignatureUtils.validate(response.getSignature(), credential);
-					return;
-				} catch (SignatureException ignoreToo) {
-					this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
-							"Signature Validation failed with provided credential(s): " + ignore.getMessage());
-				}
-			}
-		}
-
-		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(), "Couldn't find any valid credential to validate the response signature");
-		throw new SignatureException("Response Signature cannot be validated");
+		this.messageObserver.updateInfo(SamlCoreServiceImpl.class.getName(),
+				"Couldn't find any valid credential to validate the " + elementName + " signature");
+		throw new SignatureException(elementName + " Signature cannot be validated");
 	}
 
 	/**
-	 * Does the verification of the assertion
+	 * Accepts only RSA or ECDSA signatures with SHA-256 or stronger, and SHA-256 or stronger reference digests.
+	 * RSA-SHA1 signatures and SHA-1 digests are accepted only when {@link SamlConstants#ALLOW_SHA1_SIGNATURES} is
+	 * on, with a warning. Anything else (HMAC, MD5, DSA, unknown algorithms) is rejected. The algorithms are read
+	 * from the SignedInfo that is actually verified.
+	 */
+	private void validateSignatureAlgorithms(final Signature signature, final String elementName,
+											 final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		final XMLSignature xmlSignature = signature instanceof SignatureImpl ?
+				SignatureImpl.class.cast(signature).getXMLSignature() : null;
+		if (null == xmlSignature || null == xmlSignature.getSignedInfo()) {
+
+			throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+					+ " signature algorithms can not be determined");
+		}
+
+		final SignedInfo signedInfo  = xmlSignature.getSignedInfo();
+		final boolean sha1Allowed    = this.isSha1Allowed(identityProviderConfiguration);
+		final List<String> sha1Usage = new ArrayList<>();
+
+		final String signatureAlgorithm = signedInfo.getSignatureMethodURI();
+		if (!ALLOWED_SIGNATURE_ALGORITHMS.contains(signatureAlgorithm)) {
+
+			if (!sha1Allowed || !SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1.equals(signatureAlgorithm)) {
+				throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+						+ " signature algorithm '" + signatureAlgorithm + "' is not allowed");
+			}
+			sha1Usage.add("signature " + signatureAlgorithm);
+		}
+
+		try {
+
+			for (int i = 0; i < signedInfo.getLength(); i++) {
+
+				final String digestAlgorithm = signedInfo.item(i).getMessageDigestAlgorithm().getAlgorithmURI();
+				if (!ALLOWED_DIGEST_ALGORITHMS.contains(digestAlgorithm)) {
+
+					if (!sha1Allowed || !SignatureConstants.ALGO_ID_DIGEST_SHA1.equals(digestAlgorithm)) {
+						throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+								+ " signature digest algorithm '" + digestAlgorithm + "' is not allowed");
+					}
+					sha1Usage.add("digest " + digestAlgorithm);
+				}
+			}
+		} catch (XMLSecurityException e) {
+
+			throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+					+ " signature references can not be read: " + e.getMessage());
+		}
+
+		if (!sha1Usage.isEmpty()) {
+
+			Logger.warn(SamlCoreServiceImpl.class, "The SAML " + elementName + " for IdP '"
+					+ identityProviderConfiguration.getIdpName() + "' uses SHA-1 (" + String.join(", ", sha1Usage)
+					+ "), accepted because " + SamlConstants.ALLOW_SHA1_SIGNATURES
+					+ " is on. Configure the IdP to sign with SHA-256 or stronger.");
+		}
+	}
+
+	private boolean isSha1Allowed(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		return identityProviderConfiguration.containsOptionalProperty(SamlConstants.ALLOW_SHA1_SIGNATURES)
+				&& Boolean.parseBoolean(String.valueOf(identityProviderConfiguration
+						.getOptionalProperty(SamlConstants.ALLOW_SHA1_SIGNATURES)).trim());
+	}
+
+	private SamlException rejectAlgorithm(final IdentityProviderConfiguration identityProviderConfiguration,
+										  final String reason) {
+
+		final String message = reason + " for IdP '" + identityProviderConfiguration.getIdpName() + "'";
+		this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), message);
+		return new SamlException(message);
+	}
+
+	/**
+	 * Verifies a signature on a SAML element. A required signature must be present, and a signature that is
+	 * present is always verified: its profile (which binds it to the element it covers) and its value against
+	 * the IdP credentials. An unsigned element is accepted only when its signature is not required, i.e. when the
+	 * other element of the response carries the required signature.
+	 */
+	private void verifySignature(final SignableSAMLObject signableObject, final String elementName,
+								 final boolean signatureRequired,
+								 final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		if (!signableObject.isSigned()) {
+
+			if (signatureRequired) {
+
+				this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The SAML " + elementName
+						+ " for IdP '" + identityProviderConfiguration.getIdpName() + "' is not signed, but a signature is required.");
+				throw new SamlException("The SAML " + elementName + " for IdP '"
+						+ identityProviderConfiguration.getIdpName() + "' must be signed");
+			}
+
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "The SAML " + elementName
+					+ " for IdP '" + identityProviderConfiguration.getIdpName() + "' is not signed and its signature is not required.");
+			return;
+		}
+
+		try {
+
+			// this avoids the:  Apache xmlsec IdResolver could not resolve the Element for id reference: xxx
+			if (null != signableObject.getDOM()) {
+				signableObject.getDOM().setIdAttribute("ID", true);
+			}
+
+			this.validateSignatureAlgorithms(signableObject.getSignature(), elementName, identityProviderConfiguration);
+
+			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
+
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
+				new SAMLSignatureProfileValidator().validate(signableObject.getSignature());
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Profile Validation finished");
+			}
+
+			if (this.credentialService.isVerifySignatureCredentialsNeeded(identityProviderConfiguration)) {
+
+				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing signature validation...");
+				this.validateSignature(signableObject.getSignature(), elementName, identityProviderConfiguration);
+			}
+
+			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "SAML " + elementName + " signature verified");
+		} catch (SignatureException e) {
+
+			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
+			throw new SamlException(e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Does the verification of the assertion signature
 	 *
 	 * @param assertion {@link Assertion}
 	 * @param identityProviderConfiguration  {@link IdentityProviderConfiguration}
@@ -749,152 +882,21 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	public void verifyAssertionSignature(final Assertion assertion,
 										 final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		if (this.credentialService.isVerifyAssertionSignatureNeeded(identityProviderConfiguration) != assertion.isSigned()) {
-
-			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "Assertion Signatures for IdP '" +
-					identityProviderConfiguration.getIdpName() + "' do not match.");
-			throw new SamlException("The SAML Assertion for IdP '" +
-					identityProviderConfiguration.getIdpName() + "' does not match");
-		}
-
-		// If unsigned, No need to go further.
-		if (!this.credentialService.isVerifyAssertionSignatureNeeded(identityProviderConfiguration)) {
-
-			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The verification assertion signature and status code for IdP '" +
-					identityProviderConfiguration.getIdpName() + "' was skipped.");
-			return; // Exit
-		}
-
-		// Here on out we are checking signature
-		try {
-
-			// this avoids the:  Apache xmlsec IdResolver could not resolve the Element for id reference: xxx
-			assertion.getDOM().setIdAttribute("ID", true);
-
-			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
-
-				new SAMLSignatureProfileValidator().validate(assertion.getSignature());
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Profile Validation finished");
-			} else {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
-			}
-
-			// Ask on the config if the app wants signature validator
-			if (this.credentialService.isVerifySignatureCredentialsNeeded(identityProviderConfiguration)) {
-
-				if (null != this.metaDataService.getSigningCredentials(identityProviderConfiguration)) {
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
-							"Validating the signatures: " + this.metaDataService.getSigningCredentials(identityProviderConfiguration));
-
-					this.validateSignature(assertion, this.metaDataService.getSigningCredentials(identityProviderConfiguration));
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing signatures validation...");
-				} else {
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
-
-					final Credential credential = getIdPCredentials(identityProviderConfiguration);
-					try {
-						SignatureValidator.validate(assertion.getSignature(), credential);
-					} catch (SignatureException e) {
-						SignatureUtils.validate(assertion.getSignature(), credential);
-					}
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
-				}
-			} else {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
-			}
-
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "SAML Assertion signature verified");
-
-		} catch (SignatureException e) {
-
-			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
-			throw new SamlException(e.getMessage(), e);
-		}
+		this.verifySignature(assertion, "Assertion",
+				this.credentialService.isVerifyAssertionSignatureNeeded(identityProviderConfiguration), identityProviderConfiguration);
 	}
 
 	/**
-	 * Does the verification of the assertion
+	 * Does the verification of the response signature
 	 *
-	 * @param response {@link Assertion}
+	 * @param response {@link Response}
 	 * @param identityProviderConfiguration  {@link IdentityProviderConfiguration}
 	 */
 	@Override
 	public  void verifyResponseSignature(final Response response, final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		// The check signature in dotCMS and IdP must match
-		if (this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration) != response.isSigned()) {
-
-			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), "The response signatures for IdP '" + identityProviderConfiguration.getIdpName() + "' do not match.");
-			throw new SamlException("The SAML Response for IdP '" + identityProviderConfiguration.getIdpName() + "' does not match");
-		}
-
-		// If unsigned, No need to go further.
-		if (!this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration)) {
-
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "The verification response signature and status code for IdP '" +
-					identityProviderConfiguration.getIdpName() + "' was skipped.");
-			return; // Exit
-		}
-
-		// Here on out we are checking signature
-		try {
-			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing Profile Validation...");
-
-				new SAMLSignatureProfileValidator().validate(response.getSignature());
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Profile Validation finished");
-			} else {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping verification of Signature Profile");
-			}
-
-			// Ask on the config if the app wants signature validator
-			if (this.credentialService.isVerifySignatureCredentialsNeeded(identityProviderConfiguration)) {
-
-				if (null != this.metaDataService.getSigningCredentials(identityProviderConfiguration)) {
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(),
-							"Validating the signatures: " + this.metaDataService.getSigningCredentials(identityProviderConfiguration));
-
-					this.validateSignature(response, this.metaDataService.getSigningCredentials(identityProviderConfiguration));
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Executing signature validation...");
-				} else {
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validating the signature with a IdP Credentials...");
-
-					final Credential credential = getIdPCredentials(identityProviderConfiguration);
-					try {
-						SignatureValidator.validate(response.getSignature(), credential);
-					} catch (SignatureException e) {
-						SignatureUtils.validate(response.getSignature(), credential);
-					}
-
-					this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Validation of the signature with a IdP Credentials finished");
-				}
-			} else {
-
-				this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "Skipping the Verify Signature Profile check");
-			}
-
-			this.messageObserver.updateDebug(SamlCoreServiceImpl.class.getName(), "SAML Response signature verified");
-
-		} catch (SignatureException e) {
-
-			this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), e.getMessage(), e);
-			throw new SamlException(e.getMessage(), e);
-		}
+		this.verifySignature(response, "Response",
+				this.credentialService.isVerifyResponseSignatureNeeded(identityProviderConfiguration), identityProviderConfiguration);
 	}
 
 	/**

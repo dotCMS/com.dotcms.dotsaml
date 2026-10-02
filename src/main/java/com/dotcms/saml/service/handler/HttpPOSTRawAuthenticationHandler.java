@@ -5,6 +5,7 @@ import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.impl.DotHTTPPOSTRawDeflateEncoder;
 import com.dotcms.saml.service.internal.SamlCoreService;
+import com.dotcms.saml.utils.AuthnRequestStateCookie;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotmarketing.util.UtilMethods;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
@@ -47,6 +48,8 @@ public class HttpPOSTRawAuthenticationHandler implements AuthenticationHandler {
 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
+        // lets the SAML Response be bound to this request (InResponseTo) when the IdP posts it back
+        AuthnRequestStateCookie.remember(request, response, identityProviderConfiguration, authnRequest.getID());
 
         context.setMessage(authnRequest);
 

@@ -59,10 +59,14 @@ public class SamlServiceBuilderImpl implements SamlServiceBuilder {
         final MetaDescriptorService metaDescriptorService =
                 new DefaultMetaDescriptorServiceImpl(samlConfigurationService, messageObserver,
                         samlCoreService, credentialService, endpointService);
+        final SamlResponseValidator samlResponseValidator =
+                new SamlResponseValidator(endpointService, metaDataService, samlConfigurationService, messageObserver);
         InstanceUtil.putInstance(MetaDescriptorService.class, metaDescriptorService);
         InstanceUtil.putInstance(SamlCoreService.class, samlCoreService);
+        InstanceUtil.putInstance(SamlResponseValidator.class, samlResponseValidator);
         assertionResolverHandlerFactory.addAssertionResolverHandler(HttpPostAssertionResolverHandlerImpl.class.getName(),
-                new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService));
+                new HttpPostAssertionResolverHandlerImpl(messageObserver, samlCoreService, samlConfigurationService,
+                        samlResponseValidator));
         final AuthenticationResolverHandlerFactory authenticationResolverHandlerFactory =
                 new AuthenticationResolverHandlerFactory(samlConfigurationService, samlCoreService, velocityEngine, messageObserver);
         final LogoutResolverHandlerFactory logoutResolverHandlerFactory =
