@@ -59,7 +59,7 @@ public class HttpRedirectAuthenticationHandler implements AuthenticationHandler 
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration);
         // lets the SAML Response be bound to this request (InResponseTo) when the IdP posts it back
-        AuthnRequestStateCookie.remember(response, identityProviderConfiguration, authnRequest.getID());
+        AuthnRequestStateCookie.remember(request, response, identityProviderConfiguration, authnRequest.getID());
 
         // in case sign is need on request
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?

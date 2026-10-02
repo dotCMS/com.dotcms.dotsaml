@@ -8,10 +8,10 @@ import com.dotcms.saml.service.external.MetaData;
 import com.dotcms.saml.service.external.SamlConstants;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.handler.AssertionResolverHandler;
+import com.dotcms.saml.service.internal.AssertionReplayStore;
 import com.dotcms.saml.service.internal.EndpointService;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.utils.AuthnRequestStateCookie;
-import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.opensaml.saml.saml2.core.Assertion;
@@ -24,8 +24,6 @@ import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.core.Subject;
 import org.opensaml.saml.saml2.core.SubjectConfirmation;
 import org.opensaml.saml.saml2.core.SubjectConfirmationData;
-import org.opensaml.storage.ReplayCache;
-import org.opensaml.storage.impl.MemoryStorageService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,29 +51,27 @@ import java.util.Set;
  *     <li>a solicited Response answers an authentication request started from this browser, and an
  *     unsolicited one is only accepted when {@link SamlConstants#ALLOW_UNSOLICITED_RESPONSES} is on;</li>
  *     <li>the Assertion has an AuthnStatement whose IdP session has not ended;</li>
- *     <li>the Assertion has not been used before (replay cache, until its confirmation expires).</li>
+ *     <li>the Assertion has not been used before, on any node ({@link AssertionReplayStore}, until its
+ *     confirmation expires).</li>
  * </ul>
  *
- * The OpenSAML 4 {@code SAML20AssertionValidator} covers the same checks, but it is not available in the
- * OpenSAML 3.3.x line this bundle ships, so they are implemented here explicitly.
- *
- * The replay cache is kept in memory on each node.
+ * OpenSAML 3.3.1 does ship {@code SAML20AssertionValidator}, but not the parameters for valid issuers or the
+ * expected InResponseTo ({@code VALID_ISSUERS}, {@code SC_VALID_IN_RESPONSE_TO}, both added in 4.0). It also
+ * treats a missing Conditions, AudienceRestriction, Recipient or NotOnOrAfter as valid, and resolves
+ * {@code SubjectConfirmationData@Address} through DNS. So the checks are implemented here explicitly.
  *
  * @author dotCMS
  */
 public class SamlResponseValidator {
 
     private static final String API_PATH_PREFIX = "/api/v1";
-    private static final String REPLAY_CONTEXT  = "dotsaml-assertion";
     private static final int MAX_LOGGED_VALUE_LENGTH = 256;
-
-    private static volatile ReplayCache sharedReplayCache;
 
     private final EndpointService endpointService;
     private final MetaDataService metaDataService;
     private final SamlConfigurationService samlConfigurationService;
     private final MessageObserver messageObserver;
-    private final ReplayCache replayCache;
+    private final AssertionReplayStore replayStore;
     private final Clock clock;
 
     public SamlResponseValidator(final EndpointService endpointService,
@@ -84,21 +80,24 @@ public class SamlResponseValidator {
                                  final MessageObserver messageObserver) {
 
         this(endpointService, metaDataService, samlConfigurationService, messageObserver,
-                getSharedReplayCache(), Clock.systemUTC());
+                new DatabaseAssertionReplayStore(), Clock.systemUTC());
     }
 
-    SamlResponseValidator(final EndpointService endpointService,
-                          final MetaDataService metaDataService,
-                          final SamlConfigurationService samlConfigurationService,
-                          final MessageObserver messageObserver,
-                          final ReplayCache replayCache,
-                          final Clock clock) {
+    /**
+     * For tests and custom deployments: a specific replay store and clock.
+     */
+    public SamlResponseValidator(final EndpointService endpointService,
+                                 final MetaDataService metaDataService,
+                                 final SamlConfigurationService samlConfigurationService,
+                                 final MessageObserver messageObserver,
+                                 final AssertionReplayStore replayStore,
+                                 final Clock clock) {
 
         this.endpointService          = endpointService;
         this.metaDataService          = metaDataService;
         this.samlConfigurationService = samlConfigurationService;
         this.messageObserver          = messageObserver;
-        this.replayCache              = replayCache;
+        this.replayStore              = replayStore;
         this.clock                    = clock;
     }
 
@@ -131,7 +130,7 @@ public class SamlResponseValidator {
                 clockSkew, identityProviderConfiguration);
         this.validateAuthnStatements(assertion, now, clockSkew, identityProviderConfiguration);
         this.validateInResponseTo(requestId, request, httpServletResponse, identityProviderConfiguration);
-        this.checkReplay(assertion, confirmationExpiry + clockSkew, identityProviderConfiguration);
+        this.checkReplay(assertion, idpEntityId, confirmationExpiry + clockSkew, identityProviderConfiguration);
     }
 
     private void validateDestination(final Response response, final Set<String> acsUrls,
@@ -256,6 +255,8 @@ public class SamlResponseValidator {
                 continue;
             }
 
+            // Profiles §4.1.4.2 says a bearer confirmation must not carry NotBefore. Like OpenSAML, this
+            // tolerates one and only checks it is not in the future, for IdPs that send it anyway.
             if (null != data.getNotBefore() && now + clockSkew < data.getNotBefore().getMillis()) {
                 problems.add("not valid before " + data.getNotBefore());
                 continue;
@@ -330,7 +331,7 @@ public class SamlResponseValidator {
         }
     }
 
-    private void checkReplay(final Assertion assertion, final long expiresAt,
+    private void checkReplay(final Assertion assertion, final String idpEntityId, final long expiresAt,
                              final IdentityProviderConfiguration identityProviderConfiguration) {
 
         final String assertionId = StringUtils.trimToNull(assertion.getID());
@@ -339,7 +340,17 @@ public class SamlResponseValidator {
             throw this.fail(identityProviderConfiguration, "The SAML Assertion has no ID");
         }
 
-        if (!this.replayCache.check(REPLAY_CONTEXT, assertionId, expiresAt)) {
+        final boolean firstUse;
+        try {
+
+            firstUse = this.replayStore.markUsed(idpEntityId + '|' + assertionId, expiresAt);
+        } catch (SamlException e) {
+
+            throw this.fail(identityProviderConfiguration, "Could not check whether the SAML Assertion '"
+                    + sanitize(assertionId) + "' has already been used");
+        }
+
+        if (!firstUse) {
 
             throw this.fail(identityProviderConfiguration, "The SAML Assertion '" + sanitize(assertionId) + "' has already been used");
         }
@@ -477,38 +488,5 @@ public class SamlResponseValidator {
 
         final String singleLine = value.replaceAll("[\\p{Cntrl}]", "_");
         return singleLine.length() > MAX_LOGGED_VALUE_LENGTH ? singleLine.substring(0, MAX_LOGGED_VALUE_LENGTH) + "..." : singleLine;
-    }
-
-    private static ReplayCache getSharedReplayCache() {
-
-        if (null == sharedReplayCache) {
-            synchronized (SamlResponseValidator.class) {
-                if (null == sharedReplayCache) {
-                    sharedReplayCache = createReplayCache();
-                }
-            }
-        }
-
-        return sharedReplayCache;
-    }
-
-    static ReplayCache createReplayCache() {
-
-        try {
-
-            final MemoryStorageService storageService = new MemoryStorageService();
-            storageService.setId("dotsaml-replay-storage");
-            storageService.initialize();
-
-            final ReplayCache replayCache = new ReplayCache();
-            replayCache.setId("dotsaml-replay-cache");
-            replayCache.setStorage(storageService);
-            replayCache.setStrict(true);
-            replayCache.initialize();
-            return replayCache;
-        } catch (ComponentInitializationException e) {
-
-            throw new SamlException("Could not initialize the SAML replay cache: " + e.getMessage(), e);
-        }
     }
 }

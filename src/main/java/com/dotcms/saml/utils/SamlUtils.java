@@ -18,7 +18,6 @@ import org.opensaml.core.xml.io.UnmarshallingException;
 import org.opensaml.messaging.context.MessageContext;
 import org.opensaml.messaging.handler.MessageHandlerException;
 import org.opensaml.messaging.handler.impl.BasicMessageHandlerChain;
-import org.opensaml.saml.common.SignableSAMLObject;
 import org.opensaml.saml.saml2.core.NameID;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -65,9 +64,10 @@ public class SamlUtils {
      */
     public static String toXMLObjectString(final XMLObject object) {
 
-        final Element element = object instanceof SignableSAMLObject
-                && SignableSAMLObject.class.cast(object).isSigned() && object.getDOM() != null?
-                object.getDOM() : toElement(object);
+        // Serialize the existing DOM when there is one. Marshalling again would move the element into a new
+        // document and release its parent's DOM, and OpenSAML reads the signature of the parent (for example
+        // the Response around an unsigned assertion) from that DOM.
+        final Element element = null != object.getDOM()? object.getDOM() : toElement(object);
 
         return toElementString(element);
     }

@@ -55,7 +55,7 @@ public class HttpPOSTAuthenticationHandler implements AuthenticationHandler {
         final MessageContext context    = new MessageContext(); // main context
         final AuthnRequest authnRequest = this.samlCoreService.buildAuthnRequest(request, identityProviderConfiguration, SAMLConstants.SAML2_POST_BINDING_URI);
         // lets the SAML Response be bound to this request (InResponseTo) when the IdP posts it back
-        AuthnRequestStateCookie.remember(response, identityProviderConfiguration, authnRequest.getID());
+        AuthnRequestStateCookie.remember(request, response, identityProviderConfiguration, authnRequest.getID());
 
         // the client can ask to sign or not the request
         final boolean needSign = identityProviderConfiguration.containsOptionalProperty("auth.sign.request")?

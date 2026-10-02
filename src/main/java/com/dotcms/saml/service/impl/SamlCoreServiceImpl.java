@@ -615,10 +615,9 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 		final EncryptedKey key       = this.findEncryptedKey(encryptedAssertion);
 		final Decrypter keyDecrypter = new Decrypter(null, keyInfoCredentialResolver, null);
 
-		this.messageObserver.updateInfo(this.getClass().getName(), "Credential: " + credential
-				+ ", key: " + key + ", Algorithm" + encryptedAssertion.getEncryptedData().
-				getEncryptionMethod().getAlgorithm() + ", credential.getPrivateKey(): " + credential.getPrivateKey() +
-				", encryptedAssertion: " + encryptedAssertion);
+		// never log the credential's private key
+		this.messageObserver.updateDebug(this.getClass().getName(), "Decrypting assertion, algorithm: "
+				+ encryptedAssertion.getEncryptedData().getEncryptionMethod().getAlgorithm());
 
 		try {
 
@@ -626,7 +625,7 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			final SecretKey decryptKey = (SecretKey) keyDecrypter.decryptKey(key, encryptedAssertion.getEncryptedData().
 					getEncryptionMethod().getAlgorithm());
 
-			this.messageObserver.updateInfo(this.getClass().getName(), "decryptKey: " + decryptKey);
+			this.messageObserver.updateDebug(this.getClass().getName(), "Assertion key decrypted");
 			assertion = new EncryptedAssertionDecrypter(this.messageObserver).decrypt(encryptedAssertion, decryptKey);
 		} catch (DecryptionException | IllegalArgumentException | DOMException e) {
 

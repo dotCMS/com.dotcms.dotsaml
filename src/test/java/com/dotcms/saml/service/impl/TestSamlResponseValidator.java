@@ -86,7 +86,7 @@ public class TestSamlResponseValidator {
                 responseCapturing(setCookies), idp());
 
         Assert.assertTrue("the outstanding request must be cleared",
-                setCookies.stream().anyMatch(cookie -> cookie.startsWith(AuthnRequestStateCookie.COOKIE_PREFIX + requestId + "=;")
+                setCookies.stream().anyMatch(cookie -> cookie.startsWith(AuthnRequestStateCookie.COOKIE_PREFIX + CONFIG_ID + "=;")
                         && cookie.contains("Max-Age=0")));
     }
 
@@ -112,6 +112,19 @@ public class TestSamlResponseValidator {
 
         assertRejected("has already been used", () -> this.validator.validate(response(requestId), assertion,
                 requestWithState(requestId), responseCapturing(new ArrayList<>()), idp()));
+    }
+
+    @Test
+    public void unavailableReplayStoreRejectsTheResponse() {
+
+        final SamlResponseValidator failingStore = new SamlResponseValidator(endpointService(), metaDataService(),
+                new MockSamlConfigurationService(), new MockMessageObserver(),
+                (key, expiresAt) -> { throw new SamlException("database down"); },
+                Clock.fixed(Instant.ofEpochMilli(NOW), ZoneOffset.UTC));
+        final String requestId = newId();
+
+        assertRejected("Could not check whether the SAML Assertion", () -> failingStore.validate(response(requestId),
+                assertion(requestId), requestWithState(requestId), responseCapturing(new ArrayList<>()), idp()));
     }
 
     @Test
@@ -272,8 +285,9 @@ public class TestSamlResponseValidator {
     public void requestStateForAnotherIdpConfigurationIsRejected() {
 
         final String requestId = newId();
-        final HttpServletRequest request = request(new Cookie(AuthnRequestStateCookie.COOKIE_PREFIX + requestId,
-                "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"));
+        // the request was recorded for a different IdP configuration
+        final HttpServletRequest request = request(new Cookie(
+                AuthnRequestStateCookie.COOKIE_PREFIX + "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d", stateEntry(requestId)));
 
         assertRejected("does not match an authentication request started from this browser",
                 () -> this.validator.validate(response(requestId), assertion(requestId), request,
@@ -368,7 +382,7 @@ public class TestSamlResponseValidator {
     private SamlResponseValidator newValidator(final long now) {
 
         return new SamlResponseValidator(endpointService(), metaDataService(), new MockSamlConfigurationService(),
-                new MockMessageObserver(), SamlResponseValidator.createReplayCache(),
+                new MockMessageObserver(), new InMemoryAssertionReplayStore(),
                 Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC));
     }
 
@@ -455,7 +469,12 @@ public class TestSamlResponseValidator {
 
     private static HttpServletRequest requestWithState(final String requestId) {
 
-        return request(new Cookie(AuthnRequestStateCookie.COOKIE_PREFIX + requestId, CONFIG_ID));
+        return request(new Cookie(AuthnRequestStateCookie.COOKIE_PREFIX + CONFIG_ID, stateEntry(requestId)));
+    }
+
+    private static String stateEntry(final String requestId) {
+
+        return requestId + ":" + (System.currentTimeMillis() / 1000L);
     }
 
     private static HttpServletRequest request(final Cookie... cookies) {

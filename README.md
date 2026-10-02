@@ -433,7 +433,26 @@ On the assertion consumer endpoint (`/dotsaml/login/{idpConfigId}`), after decod
 - It has a bearer SubjectConfirmation whose SubjectConfirmationData has a NotOnOrAfter in the future, a Recipient equal to the assertion consumer URL, and an InResponseTo equal to the Response's.
 - The Response InResponseTo matches an authentication request started from the same browser, or it is absent and `allow.unsolicited.responses` is true.
 - It has an AuthnStatement whose SessionNotOnOrAfter, if present, is in the future.
-- The assertion ID has not been used before on this node (it is remembered until the confirmation expires).
+- The assertion ID has not been used before on any node. Used IDs are recorded in the `dotsaml_assertion_replay` table, which the bundle creates in the dotCMS database on first use, until the confirmation expires.
+
+### Troubleshooting rejected SAML logins
+
+Each rejection is logged with the IdP name and the reason. The usual causes:
+
+| Log message contains | Cause | Fix |
+|---|---|---|
+| `The SAML Response ... must be signed` / `The SAML Assertion ... must be signed` | The IdP doesn't sign what Validation Type requires. | Turn signing on at the IdP, or select the Validation Type that matches exactly what it signs. |
+| `Signature cannot be validated` | The signature doesn't match the IdP certificate in the metadata. | Re-import the IdP metadata (the IdP may have rotated its certificate). |
+| `signature algorithm ... is not allowed` / `digest algorithm ... is not allowed` | The IdP signs with SHA-1. | Switch the IdP to SHA-256. As a stopgap, set `allow.sha1.signatures=true`. |
+| `Unsolicited SAML Responses (IdP-initiated login) are not accepted` | The login was started from the IdP (for example an app tile). | Start it from dotCMS, or set `allow.unsolicited.responses=true`. |
+| `does not match an authentication request started from this browser` | The login took longer than `authn.request.max.age`, the browser didn't send the request cookie (it needs HTTPS), or the response was posted again. | Start the login again from dotCMS. |
+| `Destination ... is not this service provider's assertion consumer URL` / `Recipient ...` | The IdP posts to a different URL. | Set the IdP's ACS URL to `https://<Service Provider Endpoint Hostname>/dotsaml/login/<site id>`, or correct the Endpoint Hostname. |
+| `AudienceRestriction does not include this service provider` | The IdP's audience (SP entity ID) differs from the Service Provider Issuer ID. | Make the two match. |
+| `Issuer ... is not the configured IdP` | The metadata belongs to another IdP or tenant. | Re-import the right IdP metadata. |
+| `expired at` / `not valid before` | Clock difference between the IdP and dotCMS. | Check NTP on both sides, or raise `clock.skew`. |
+| `has already been used` | The same response was posted twice (back button, refresh). | Start the login again. |
+| `Could not check whether the SAML Assertion ... has already been used` | The replay table couldn't be read or written. | Check database connectivity and that the dotCMS user can create `dotsaml_assertion_replay`. |
+| `must contain exactly one ... assertion` | Several assertions, or encryption that doesn't match `isassertion.encrypted`. | Configure the IdP to send one assertion, and set `isassertion.encrypted` to match. |
 
 ### Why SAML evolution is organic, and has been reactive
 
