@@ -383,6 +383,7 @@ Once your changes are tested and working, create the release version:
 - message.life.time: this is the time in milliseconds (default 20000) that the SAML Response is valid after its IssueInstant, after this time it will be considered expired.
 - allow.unsolicited.responses: boolean, false by default. By default dotCMS only accepts a SAML Response that answers an authentication request started from the same browser (InResponseTo). Set it to true to also accept IdP-initiated login (for example an app tile on the IdP portal); such responses still have to pass all the assertion checks.
 - authn.request.max.age: seconds (default 900, between 60 and 3600) an authentication request started from dotCMS stays valid while the user signs in at the IdP.
+- allow.sha1.signatures: boolean, false by default. IdP signatures must use RSA or ECDSA with SHA-256, SHA-384 or SHA-512, and SHA-256 or stronger digests. Set it to true only for an IdP that still signs with RSA-SHA1 or SHA-1 digests; each such response is accepted with a warning in the log.
 - auth.sign.request: this is a boolean that indicates if the SAML request should be signed or not, it is usually set to false.
 - auth.signature.reference.digestmethod.algorithm: this is the algorithm used to sign the SAML request, it is usually set to "http://www.w3.org/2001/04/xmlenc#sha256".
 - auth.sign.params: this is a boolean that indicates if the SAML request parameters should be signed or not, it is usually set to true.
@@ -424,6 +425,7 @@ On the assertion consumer endpoint (`/dotsaml/login/{idpConfigId}`), after decod
 
 - It contains exactly one assertion, encrypted or not as configured.
 - The signatures required by the Validation Type are present and valid, and any other signature present is valid. The signature profile check binds each signature to the element it covers.
+- Every signature uses an allowed algorithm: RSA or ECDSA with SHA-256/384/512 and SHA-256/384/512 digests (RSA-SHA1 and SHA-1 digests only with `allow.sha1.signatures`).
 - The status is Success and the Response IssueInstant is within `message.life.time`.
 - The Response Destination, when present (always, for a signed Response), is this site's assertion consumer URL.
 - The Response Issuer (when present) and the Assertion Issuer are the IdP entityID from the IdP metadata.

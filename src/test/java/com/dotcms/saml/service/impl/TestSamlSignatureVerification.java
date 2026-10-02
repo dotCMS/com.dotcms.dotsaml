@@ -13,6 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
 import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.common.SAMLObjectContentReference;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Issuer;
 import org.opensaml.saml.saml2.core.Response;
@@ -28,6 +29,7 @@ import java.lang.reflect.Proxy;
 import java.security.KeyPair;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -124,6 +126,57 @@ public class TestSamlSignatureVerification {
     }
 
     @Test
+    public void sha1SignatureIsRejectedByDefault() throws Exception {
+
+        final Assertion assertion = signedAssertion(idpCredential,
+                SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1, SignatureConstants.ALGO_ID_DIGEST_SHA1);
+
+        assertRejected("signature algorithm '" + SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1 + "' is not allowed",
+                () -> samlCoreService().verifyAssertionSignature(assertion, idp(SamlConstants.ASSERTION)));
+    }
+
+    @Test
+    public void sha1DigestIsRejectedByDefault() throws Exception {
+
+        final Assertion assertion = signedAssertion(idpCredential,
+                SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256, SignatureConstants.ALGO_ID_DIGEST_SHA1);
+
+        assertRejected("digest algorithm '" + SignatureConstants.ALGO_ID_DIGEST_SHA1 + "' is not allowed",
+                () -> samlCoreService().verifyAssertionSignature(assertion, idp(SamlConstants.ASSERTION)));
+    }
+
+    @Test
+    public void sha1IsAcceptedWhenAllowed() throws Exception {
+
+        final Assertion assertion = signedAssertion(idpCredential,
+                SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1, SignatureConstants.ALGO_ID_DIGEST_SHA1);
+
+        samlCoreService().verifyAssertionSignature(assertion,
+                idp(SamlConstants.ASSERTION, Collections.singletonMap(SamlConstants.ALLOW_SHA1_SIGNATURES, "true")));
+    }
+
+    @Test
+    public void strongerRsaAlgorithmsAreAccepted() throws Exception {
+
+        samlCoreService().verifyAssertionSignature(signedAssertion(idpCredential,
+                SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512, SignatureConstants.ALGO_ID_DIGEST_SHA384),
+                idp(SamlConstants.ASSERTION));
+    }
+
+    @Test
+    public void hmacSignatureIsRejectedEvenWhenSha1IsAllowed() throws Exception {
+
+        final Credential hmacCredential = CredentialSupport.getSimpleCredential(
+                KeySupport.generateKey("HmacSHA256", 256, null));
+        final Assertion assertion = signedAssertion(hmacCredential,
+                SignatureConstants.ALGO_ID_MAC_HMAC_SHA256, SignatureConstants.ALGO_ID_DIGEST_SHA256);
+
+        assertRejected("signature algorithm '" + SignatureConstants.ALGO_ID_MAC_HMAC_SHA256 + "' is not allowed",
+                () -> samlCoreService().verifyAssertionSignature(assertion,
+                        idp(SamlConstants.ASSERTION, Collections.singletonMap(SamlConstants.ALLOW_SHA1_SIGNATURES, "true"))));
+    }
+
+    @Test
     public void responseWithMoreThanOneAssertionIsRejected() {
 
         final Response response = response();
@@ -187,12 +240,20 @@ public class TestSamlSignatureVerification {
 
     private static Assertion signedAssertion(final Credential signingCredential) throws Exception {
 
+        return signedAssertion(signingCredential, SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
+                SignatureConstants.ALGO_ID_DIGEST_SHA256);
+    }
+
+    private static Assertion signedAssertion(final Credential signingCredential, final String signatureAlgorithm,
+                                             final String digestAlgorithm) throws Exception {
+
         final Assertion assertion = assertion();
         final Signature signature = build(Signature.DEFAULT_ELEMENT_NAME);
         signature.setSigningCredential(signingCredential);
-        signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256);
+        signature.setSignatureAlgorithm(signatureAlgorithm);
         signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
         assertion.setSignature(signature);
+        ((SAMLObjectContentReference) signature.getContentReferences().get(0)).setDigestAlgorithm(digestAlgorithm);
 
         XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(assertion).marshall(assertion);
         Signer.signObject(signature);
@@ -212,6 +273,12 @@ public class TestSamlSignatureVerification {
 
     private static IdentityProviderConfiguration idp(final String signatureValidationType) {
 
+        return idp(signatureValidationType, Collections.emptyMap());
+    }
+
+    private static IdentityProviderConfiguration idp(final String signatureValidationType,
+                                                     final Map<String, String> optionalProperties) {
+
         return (IdentityProviderConfiguration) Proxy.newProxyInstance(TestSamlSignatureVerification.class.getClassLoader(),
                 new Class<?>[]{IdentityProviderConfiguration.class},
                 (proxy, method, args) -> {
@@ -220,7 +287,8 @@ public class TestSamlSignatureVerification {
                         case "getIdpName":                 return "Test IdP";
                         case "getSpEndpointHostname":      return "dotcms.example.com";
                         case "getSignatureValidationType": return signatureValidationType;
-                        case "containsOptionalProperty":   return false;
+                        case "containsOptionalProperty":   return optionalProperties.containsKey((String) args[0]);
+                        case "getOptionalProperty":        return optionalProperties.get((String) args[0]);
                         default:                           return null;
                     }
                 });

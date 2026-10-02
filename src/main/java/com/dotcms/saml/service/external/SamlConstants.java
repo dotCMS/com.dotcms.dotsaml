@@ -31,6 +31,13 @@ public class SamlConstants {
 	 */
 	public static final String AUTHN_REQUEST_MAX_AGE = "authn.request.max.age";
 	public static final int AUTHN_REQUEST_MAX_AGE_DEFAULT_VALUE = 900;
+
+	/**
+	 * Optional IdP property. When "true", RSA-SHA1 signatures and SHA-1 digests are accepted (with a warning)
+	 * for IdPs that can not sign with SHA-256 or stronger yet.
+	 */
+	public static final String ALLOW_SHA1_SIGNATURES = "allow.sha1.signatures";
+
 	public static final String SAML_USER_ID = "SAMLUserId";
 	public static final String DEFAULT_LOGIN_PATH = "/dotAdmin";
 

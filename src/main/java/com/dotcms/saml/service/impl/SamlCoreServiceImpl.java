@@ -8,6 +8,7 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.saml.service.internal.CredentialProvider;
 import com.dotcms.saml.service.internal.CredentialService;
 import com.dotcms.saml.service.internal.EndpointService;
+import com.dotcms.saml.service.external.SamlConstants;
 import com.dotcms.saml.service.external.SamlException;
 import com.dotcms.saml.service.internal.MetaDataService;
 import com.dotcms.saml.service.internal.SamlCoreService;
@@ -15,10 +16,14 @@ import com.dotcms.saml.utils.EncryptedAssertionDecrypter;
 import com.dotcms.saml.utils.IdpConfigCredentialResolver;
 import com.dotcms.saml.utils.SamlUtils;
 import com.dotcms.saml.utils.SignatureUtils;
+import com.dotmarketing.util.Logger;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
 import net.shibboleth.utilities.java.support.resolver.Criterion;
 import net.shibboleth.utilities.java.support.resolver.ResolverException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.xml.security.exceptions.XMLSecurityException;
+import org.apache.xml.security.signature.SignedInfo;
+import org.apache.xml.security.signature.XMLSignature;
 import org.joda.time.DateTime;
 import org.opensaml.core.criterion.EntityIdCriterion;
 import org.opensaml.core.xml.XMLObjectBuilderFactory;
@@ -54,6 +59,8 @@ import org.opensaml.xmlsec.encryption.support.DecryptionException;
 import org.opensaml.xmlsec.encryption.support.InlineEncryptedKeyResolver;
 import org.opensaml.xmlsec.keyinfo.impl.StaticKeyInfoCredentialResolver;
 import org.opensaml.xmlsec.signature.Signature;
+import org.opensaml.xmlsec.signature.impl.SignatureImpl;
+import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.opensaml.xmlsec.signature.support.SignatureException;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.w3c.dom.DOMException;
@@ -65,10 +72,12 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotmarketing.util.UtilMethods.isSet;
@@ -88,6 +97,19 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	private static final Map<String, Credential>  credentialMap      = new ConcurrentHashMap<>();
 	private static final Map<String, Credential>  idpCredentialMap   = new ConcurrentHashMap<>();
 	public static final String SKIP_REQUEST_AUTHN_CONTEXT = "skip.request.authn.context";
+
+	private static final Set<String> ALLOWED_SIGNATURE_ALGORITHMS = Set.of(
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA256,
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA384,
+			SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA512,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA256,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA384,
+			SignatureConstants.ALGO_ID_SIGNATURE_ECDSA_SHA512);
+
+	private static final Set<String> ALLOWED_DIGEST_ALGORITHMS = Set.of(
+			SignatureConstants.ALGO_ID_DIGEST_SHA256,
+			SignatureConstants.ALGO_ID_DIGEST_SHA384,
+			SignatureConstants.ALGO_ID_DIGEST_SHA512);
 
 	private final CredentialService credentialService;
 	private final EndpointService endpointService;
@@ -722,6 +744,81 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 	}
 
 	/**
+	 * Accepts only RSA or ECDSA signatures with SHA-256 or stronger, and SHA-256 or stronger reference digests.
+	 * RSA-SHA1 signatures and SHA-1 digests are accepted only when {@link SamlConstants#ALLOW_SHA1_SIGNATURES} is
+	 * on, with a warning. Anything else (HMAC, MD5, DSA, unknown algorithms) is rejected. The algorithms are read
+	 * from the SignedInfo that is actually verified.
+	 */
+	private void validateSignatureAlgorithms(final Signature signature, final String elementName,
+											 final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		final XMLSignature xmlSignature = signature instanceof SignatureImpl ?
+				SignatureImpl.class.cast(signature).getXMLSignature() : null;
+		if (null == xmlSignature || null == xmlSignature.getSignedInfo()) {
+
+			throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+					+ " signature algorithms can not be determined");
+		}
+
+		final SignedInfo signedInfo  = xmlSignature.getSignedInfo();
+		final boolean sha1Allowed    = this.isSha1Allowed(identityProviderConfiguration);
+		final List<String> sha1Usage = new ArrayList<>();
+
+		final String signatureAlgorithm = signedInfo.getSignatureMethodURI();
+		if (!ALLOWED_SIGNATURE_ALGORITHMS.contains(signatureAlgorithm)) {
+
+			if (!sha1Allowed || !SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1.equals(signatureAlgorithm)) {
+				throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+						+ " signature algorithm '" + signatureAlgorithm + "' is not allowed");
+			}
+			sha1Usage.add("signature " + signatureAlgorithm);
+		}
+
+		try {
+
+			for (int i = 0; i < signedInfo.getLength(); i++) {
+
+				final String digestAlgorithm = signedInfo.item(i).getMessageDigestAlgorithm().getAlgorithmURI();
+				if (!ALLOWED_DIGEST_ALGORITHMS.contains(digestAlgorithm)) {
+
+					if (!sha1Allowed || !SignatureConstants.ALGO_ID_DIGEST_SHA1.equals(digestAlgorithm)) {
+						throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+								+ " signature digest algorithm '" + digestAlgorithm + "' is not allowed");
+					}
+					sha1Usage.add("digest " + digestAlgorithm);
+				}
+			}
+		} catch (XMLSecurityException e) {
+
+			throw this.rejectAlgorithm(identityProviderConfiguration, "The SAML " + elementName
+					+ " signature references can not be read: " + e.getMessage());
+		}
+
+		if (!sha1Usage.isEmpty()) {
+
+			Logger.warn(SamlCoreServiceImpl.class, "The SAML " + elementName + " for IdP '"
+					+ identityProviderConfiguration.getIdpName() + "' uses SHA-1 (" + String.join(", ", sha1Usage)
+					+ "), accepted because " + SamlConstants.ALLOW_SHA1_SIGNATURES
+					+ " is on. Configure the IdP to sign with SHA-256 or stronger.");
+		}
+	}
+
+	private boolean isSha1Allowed(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		return identityProviderConfiguration.containsOptionalProperty(SamlConstants.ALLOW_SHA1_SIGNATURES)
+				&& Boolean.parseBoolean(String.valueOf(identityProviderConfiguration
+						.getOptionalProperty(SamlConstants.ALLOW_SHA1_SIGNATURES)).trim());
+	}
+
+	private SamlException rejectAlgorithm(final IdentityProviderConfiguration identityProviderConfiguration,
+										  final String reason) {
+
+		final String message = reason + " for IdP '" + identityProviderConfiguration.getIdpName() + "'";
+		this.messageObserver.updateError(SamlCoreServiceImpl.class.getName(), message);
+		return new SamlException(message);
+	}
+
+	/**
 	 * Verifies a signature on a SAML element. A required signature must be present, and a signature that is
 	 * present is always verified: its profile (which binds it to the element it covers) and its value against
 	 * the IdP credentials. An unsigned element is accepted only when its signature is not required, i.e. when the
@@ -752,6 +849,8 @@ public class SamlCoreServiceImpl implements SamlCoreService {
 			if (null != signableObject.getDOM()) {
 				signableObject.getDOM().setIdAttribute("ID", true);
 			}
+
+			this.validateSignatureAlgorithms(signableObject.getSignature(), elementName, identityProviderConfiguration);
 
 			if (this.credentialService.isVerifySignatureProfileNeeded(identityProviderConfiguration)) {
 
