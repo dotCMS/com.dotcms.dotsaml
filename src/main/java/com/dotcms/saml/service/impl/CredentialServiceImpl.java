@@ -7,6 +7,10 @@ import com.dotcms.saml.service.internal.CredentialProvider;
 import com.dotcms.saml.service.internal.CredentialService;
 import com.dotcms.saml.utils.InstanceUtil;
 import com.dotcms.saml.service.external.SamlConstants;
+import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.Locale;
 
 public class CredentialServiceImpl implements CredentialService {
 
@@ -57,10 +61,8 @@ public class CredentialServiceImpl implements CredentialService {
 	}
 
 	/**
-	 * If the user wants to do a verifyAssertionSignature, by default true.
-	 * There are some testing or diagnostic scenarios where you want to avoid
-	 * the validation to identified issues, but in general on production this
-	 * must be true.
+	 * True when the assertion must carry a valid signature: validation type "assertion" or
+	 * "responseandassertion", or any value that is not recognized (see {@link #resolveSignatureValidationType}).
 	 *
 	 * @param identityProviderConfiguration {@link IdentityProviderConfiguration}
 	 * @return boolean
@@ -68,15 +70,13 @@ public class CredentialServiceImpl implements CredentialService {
 	@Override
 	public boolean isVerifyAssertionSignatureNeeded(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		return identityProviderConfiguration.getSignatureValidationType().equals(SamlConstants.RESPONSE_AND_ASSERTION) ||
-				identityProviderConfiguration.getSignatureValidationType().equals(SamlConstants.ASSERTION);
+		final String validationType = resolveSignatureValidationType(identityProviderConfiguration);
+		return SamlConstants.RESPONSE_AND_ASSERTION.equals(validationType) || SamlConstants.ASSERTION.equals(validationType);
 	}
 
 	/**
-	 * If the user wants to do a verifyResponseSignature, by default true.
-	 * There are some testing or diagnostic scenarios where you want to avoid
-	 * the validation to identified issues, but in general on production this
-	 * must be true.
+	 * True when the response must carry a valid signature: validation type "response" or
+	 * "responseandassertion", or any value that is not recognized (see {@link #resolveSignatureValidationType}).
 	 *
 	 * @param identityProviderConfiguration identityProviderConfiguration
 	 * @return boolean
@@ -84,40 +84,70 @@ public class CredentialServiceImpl implements CredentialService {
 	@Override
 	public boolean isVerifyResponseSignatureNeeded(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		return identityProviderConfiguration.getSignatureValidationType().equals( SamlConstants.RESPONSE_AND_ASSERTION ) ||
-				identityProviderConfiguration.getSignatureValidationType().equals( SamlConstants.RESPONSE );
+		final String validationType = resolveSignatureValidationType(identityProviderConfiguration);
+		return SamlConstants.RESPONSE_AND_ASSERTION.equals(validationType) || SamlConstants.RESPONSE.equals(validationType);
 	}
 
 	/**
-	 * If the user wants to do a verifySignatureCredentials, by default true
-	 * There are some testing or diagnostic scenarios where you want to avoid
-	 * the validation to identified issues, but in general on production this
-	 * must be true. Note: if isVerifyAssertionSignatureNeeded is true, this is
-	 * also skipped.
-	 * 
+	 * Always true. Cryptographic verification of a signature cannot be turned off; a configured
+	 * "false" value is ignored and logged.
+	 *
 	 * @param identityProviderConfiguration IdentityProviderConfiguration
 	 * @return boolean
 	 */
 	@Override
 	public boolean isVerifySignatureCredentialsNeeded(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		return this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS);
-
+		warnIfDisabled(identityProviderConfiguration, SamlName.DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS);
+		return true;
 	}
 
 	/**
-	 * If the user wants to do a verifySignatureProfile, by default true There
-	 * are some testing or diagnostic scenarios where you want to avoid the
-	 * validation to identified issues, but in general on production this must
-	 * be true. Note: if isVerifyAssertionSignatureNeeded is true, this is also
-	 * skipped.
-	 * 
+	 * Always true. The signature profile check binds a signature to the element it covers; a configured
+	 * "false" value is ignored and logged.
+	 *
 	 * @param identityProviderConfiguration IdentityProviderConfiguration
 	 * @return boolean
 	 */
 	@Override
 	public boolean isVerifySignatureProfileNeeded(final IdentityProviderConfiguration identityProviderConfiguration) {
 
-		return this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_VERIFY_SIGNATURE_PROFILE);
+		warnIfDisabled(identityProviderConfiguration, SamlName.DOT_SAML_VERIFY_SIGNATURE_PROFILE);
+		return true;
+	}
+
+	/**
+	 * Returns the configured signature validation type when it is one of "response", "assertion" or
+	 * "responseandassertion". Anything else (blank, "none", a typo) fails closed to "responseandassertion",
+	 * so an unrecognized value can never turn signature verification off.
+	 *
+	 * @param identityProviderConfiguration IdentityProviderConfiguration
+	 * @return String one of the {@link SamlConstants} validation types
+	 */
+	public static String resolveSignatureValidationType(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		final String configured = identityProviderConfiguration.getSignatureValidationType();
+		final String normalized = null == configured ? StringUtils.EMPTY : configured.trim().toLowerCase(Locale.ROOT);
+		switch (normalized) {
+			case SamlConstants.RESPONSE:
+			case SamlConstants.ASSERTION:
+			case SamlConstants.RESPONSE_AND_ASSERTION:
+				return normalized;
+			default:
+				Logger.warn(CredentialServiceImpl.class, "Unsupported signature validation type '" + configured
+						+ "' for IdP '" + identityProviderConfiguration.getIdpName()
+						+ "'. Requiring a signed response and a signed assertion.");
+				return SamlConstants.RESPONSE_AND_ASSERTION;
+		}
+	}
+
+	private void warnIfDisabled(final IdentityProviderConfiguration identityProviderConfiguration, final SamlName samlName) {
+
+		final Boolean configured = this.samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, samlName);
+		if (Boolean.FALSE.equals(configured)) {
+
+			Logger.warn(CredentialServiceImpl.class, "Ignoring '" + samlName.getPropertyName() + "=false' for IdP '"
+					+ identityProviderConfiguration.getIdpName() + "': SAML signatures are always verified.");
+		}
 	}
 }

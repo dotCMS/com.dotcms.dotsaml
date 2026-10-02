@@ -182,6 +182,7 @@ In core the SAML code is mostly related to:
    - **SP Endpoint Hostname/Port**: `localhost:8443`
    - **Validation Type**: Select `Only Assertion` if Azure is configured to sign assertions only (default).
      If your Entra application is configured to sign the entire SAML **Response** (not just the assertion), select `Both Response and Assertion` or `Only Response` accordingly.
+     A response is rejected unless the element(s) selected here are signed by the IdP; any other signature present is verified too. A missing or unrecognized value is treated as `Both Response and Assertion`.
    - **Public Certificate / Private Key**: Generate a public/private key pair for dotCMS SAML. This key pair is used by the SP (dotCMS) to sign authentication requests and decrypt encrypted assertions. You can generate one using:
      ```bash
      openssl req -x509 -newkey rsa:2048 -keyout saml-key.pem -out saml-cert.pem -days 365 -nodes
@@ -378,8 +379,10 @@ Once your changes are tested and working, create the release version:
 - authn.protocol.binding: The binding for the auth request XML, such as Http-Redirect, Http-POST, Http-POST-Raw. Based on this value will use Redirect or Post to do the authentication request from dotCMS to the IDP
 - logout.service.endpoint.url: this is a callback to be called by the IDP when the logout happens on the IDP and needs to get back to dotCMS, it is usually set to "/dotAdmin/show-logout"
 - logout.okta.url: okta needs a special url instead of the IDP metadata XML to get logout, this is the url used in that particular case.
-- clock.skew: this is the clock skew in seconds, it is used to allow some time difference between the IDP and dotCMS servers, so if the IDP sends a SAML Assertion with a timestamp that is 5 seconds in the past, it will still be valid.
-- message.life.time: this is the time in seconds that the SAML message will be valid, after this time it will be considered expired.
+- clock.skew: this is the clock skew in milliseconds (default 10000), it is used to allow some time difference between the IDP and dotCMS servers when checking the Response IssueInstant and the assertion Conditions, SubjectConfirmationData and AuthnStatement validity times.
+- message.life.time: this is the time in milliseconds (default 20000) that the SAML Response is valid after its IssueInstant, after this time it will be considered expired.
+- allow.unsolicited.responses: boolean, false by default. By default dotCMS only accepts a SAML Response that answers an authentication request started from the same browser (InResponseTo). Set it to true to also accept IdP-initiated login (for example an app tile on the IdP portal); such responses still have to pass all the assertion checks.
+- authn.request.max.age: seconds (default 900, between 60 and 3600) an authentication request started from dotCMS stays valid while the user signs in at the IdP.
 - auth.sign.request: this is a boolean that indicates if the SAML request should be signed or not, it is usually set to false.
 - auth.signature.reference.digestmethod.algorithm: this is the algorithm used to sign the SAML request, it is usually set to "http://www.w3.org/2001/04/xmlenc#sha256".
 - auth.sign.params: this is a boolean that indicates if the SAML request parameters should be signed or not, it is usually set to true.
@@ -390,8 +393,8 @@ Once your changes are tested and working, create the release version:
 - logout.signature.algorithm: this is the algorithm used to sign the SAML logout request, it is usually set to "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".
 - location.cleanqueryparams: this is a boolean that indicates if the query parameters should be cleaned from the location URL, it is usually set to true.
 - logout.protocol.binding: this is the binding for the logout request XML, such as Http-Redirect, Http-POST, Http-Okta. Based on this value will use Redirect or Post to do the logout request from dotCMS to the IDP
-- verify.signature.credentials: this is a boolean that indicates if the SAML response signature should be verified or not, it is usually set to true.
-- verify.signature.profile: this is the profile used to verify the SAML response signature, it is usually set to "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256".
+- verify.signature.credentials: no longer configurable. Signatures are always verified against the IdP credentials; a value of false is ignored and logged as a warning.
+- verify.signature.profile: no longer configurable. The SAML signature profile check is always applied; a value of false is ignored and logged as a warning.
 - idp.metadata.protocol: this is the protocol used to retrieve the IDP metadata, it is usually set to "urn:oasis:names:tc:SAML:2.0:protocol".
 - use.encrypted.descriptor: When setting the Key Descriptor in the IDP metadata, this property indicates if the Key Descriptor should be encrypted or not, it is usually set to false.
 - access.filter.values: Is a comma separeted list with exceptional cases to avoid SAML evaluation
@@ -414,6 +417,21 @@ Once your changes are tested and working, create the release version:
 - authn.context.class.ref: This is the class reference of the AuthnContext element in the SAML request, it is usually set to "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport". This value can be changed to other classes such as "urn:oasis:names:tc:SAML:2.0:ac:classes:X509" or "urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos" depending on the IDP configuration.
 - authn.comparisontype: This is the comparison type of the AuthnContext element in the SAML request, it is usually set to "minimum". This value can be changed to "exact" or "maximum" or "better" depending on the IDP configuration.
 - isassertion.encrypted: This is a boolean that indicates if the SAML assertion should be encrypted or not, it is usually set to false. If set to true, the SAML assertion will be encrypted using the public key of the SP, which can be useful for some IDPs that require it.
+
+### How a SAML Response is validated
+
+On the assertion consumer endpoint (`/dotsaml/login/{idpConfigId}`), after decoding, a response is accepted only when all of the following hold (SAML 2.0 Web Browser SSO profile):
+
+- It contains exactly one assertion, encrypted or not as configured.
+- The signatures required by the Validation Type are present and valid, and any other signature present is valid. The signature profile check binds each signature to the element it covers.
+- The status is Success and the Response IssueInstant is within `message.life.time`.
+- The Response Destination, when present (always, for a signed Response), is this site's assertion consumer URL.
+- The Response Issuer (when present) and the Assertion Issuer are the IdP entityID from the IdP metadata.
+- The assertion has Conditions whose NotBefore/NotOnOrAfter include the current time, and every AudienceRestriction includes the Service Provider Issuer ID.
+- It has a bearer SubjectConfirmation whose SubjectConfirmationData has a NotOnOrAfter in the future, a Recipient equal to the assertion consumer URL, and an InResponseTo equal to the Response's.
+- The Response InResponseTo matches an authentication request started from the same browser, or it is absent and `allow.unsolicited.responses` is true.
+- It has an AuthnStatement whose SessionNotOnOrAfter, if present, is in the future.
+- The assertion ID has not been used before on this node (it is remembered until the confirmation expires).
 
 ### Why SAML evolution is organic, and has been reactive
 

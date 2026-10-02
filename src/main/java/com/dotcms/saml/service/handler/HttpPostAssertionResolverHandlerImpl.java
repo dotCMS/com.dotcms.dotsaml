@@ -4,8 +4,10 @@ import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.MessageObserver;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
+import com.dotcms.saml.service.impl.SamlResponseValidator;
 import com.dotcms.saml.service.internal.SamlCoreService;
 import com.dotcms.saml.service.external.SamlException;
+import com.dotcms.saml.utils.InstanceUtil;
 import com.dotcms.saml.utils.SamlUtils;
 import net.shibboleth.utilities.java.support.component.ComponentInitializationException;
 import org.apache.commons.lang.StringUtils;
@@ -44,14 +46,25 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 	private final MessageObserver messageObserver;
 	private final SamlCoreService samlCoreService;
 	private final SamlConfigurationService samlConfigurationService;
+	private final SamlResponseValidator samlResponseValidator;
 
 	public HttpPostAssertionResolverHandlerImpl(final MessageObserver messageObserver,
 												final SamlCoreService samlCoreService,
 												final SamlConfigurationService samlConfigurationService) {
 
+		this(messageObserver, samlCoreService, samlConfigurationService,
+				InstanceUtil.getInstance(SamlResponseValidator.class));
+	}
+
+	public HttpPostAssertionResolverHandlerImpl(final MessageObserver messageObserver,
+												final SamlCoreService samlCoreService,
+												final SamlConfigurationService samlConfigurationService,
+												final SamlResponseValidator samlResponseValidator) {
+
 		this.messageObserver = messageObserver;
 		this.samlCoreService = samlCoreService;
 		this.samlConfigurationService = samlConfigurationService;
+		this.samlResponseValidator = samlResponseValidator;
 	}
 
 	@Override
@@ -100,7 +113,13 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 			decoder.destroy();
 		}
 
-		this.validateDestinationAndLifetime(messageContext, request, identityProviderConfiguration);
+		if (null == this.samlResponseValidator) {
+
+			// fail closed: never resolve an assertion without the profile checks
+			throw new SamlException("The SAML Response validator is not available");
+		}
+
+		this.validateMessageLifetime(messageContext, identityProviderConfiguration);
 
 		assertion = this.samlCoreService.getAssertion(samlResponse, identityProviderConfiguration);
 
@@ -113,26 +132,35 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 
 		this.verifyStatus(samlResponse);
 
+		// Destination, Issuer, Audience, Conditions, SubjectConfirmation, InResponseTo and replay.
+		this.samlResponseValidator.validate(samlResponse, assertion, request, response, identityProviderConfiguration);
+
 		return assertion;
 	}
 
 	private void verifyStatus(final Response response) {
 
 		final Status status         = response.getStatus();
-		final StatusCode statusCode = status.getStatusCode();
-		final String statusCodeURI  = statusCode.getValue();
+		final StatusCode statusCode = null != status ? status.getStatusCode() : null;
+		final String statusCodeURI  = null != statusCode ? statusCode.getValue() : null;
 
-		if (!statusCodeURI.equals(StatusCode.SUCCESS)) {
+		if (!StatusCode.SUCCESS.equals(statusCodeURI)) {
 
 			this.messageObserver.updateError(this.getClass().getName(),
-					"SAML status code was NOT successful: " + statusCode.getStatusCode().getValue());
-			throw new SamlException("SAML status code was NOT successful: " + statusCode.getValue());
+					"SAML status code was NOT successful: " + statusCodeURI);
+			throw new SamlException("SAML status code was NOT successful: " + statusCodeURI);
 		}
 	}
 
+	/**
+	 * Checks the Response IssueInstant against the configured message lifetime. The Destination and the
+	 * assertion validity window are checked by {@link SamlResponseValidator}, against the configured assertion
+	 * consumer URL rather than the servlet request URL, which differs behind a TLS-terminating proxy and after the
+	 * /dotsaml/login to /api/v1/dotsaml/login rewrite.
+	 */
 	@SuppressWarnings("unchecked")
-	private void validateDestinationAndLifetime(final MessageContext<SAMLObject> context,
-			final HttpServletRequest request, final IdentityProviderConfiguration identityProviderConfiguration) {
+	private void validateMessageLifetime(final MessageContext<SAMLObject> context,
+			final IdentityProviderConfiguration identityProviderConfiguration) {
 
 		// Just setting it to a value in case of exception.
 		long clockSkew = DOT_SAML_CLOCK_SKEW_DEFAULT_VALUE;
@@ -180,7 +208,6 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 		lifetimeSecurityHandler.setMessageLifetime(lifeTime);
 		lifetimeSecurityHandler.setRequiredRule(true);
 
-		// validation of message destination.
 		handlers.add(lifetimeSecurityHandler);
 		handlerChain.setHandlers(handlers);
 

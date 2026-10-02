@@ -18,6 +18,19 @@ public class SamlConstants {
 	public static final String RESPONSE_AND_ASSERTION = "responseandassertion";
 	public static final String RESPONSE = "response";
 	public static final String ASSERTION = "assertion";
+
+	/**
+	 * Optional IdP property. When "true", responses without InResponseTo (IdP-initiated SSO) are accepted.
+	 * By default only responses to an authentication request started from the same browser are accepted.
+	 */
+	public static final String ALLOW_UNSOLICITED_RESPONSES = "allow.unsolicited.responses";
+
+	/**
+	 * Optional IdP property. Seconds an outstanding authentication request stays valid while the user
+	 * authenticates at the IdP.
+	 */
+	public static final String AUTHN_REQUEST_MAX_AGE = "authn.request.max.age";
+	public static final int AUTHN_REQUEST_MAX_AGE_DEFAULT_VALUE = 900;
 	public static final String SAML_USER_ID = "SAMLUserId";
 	public static final String DEFAULT_LOGIN_PATH = "/dotAdmin";
 
