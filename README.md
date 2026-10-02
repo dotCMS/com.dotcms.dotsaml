@@ -431,7 +431,7 @@ On the assertion consumer endpoint (`/dotsaml/login/{idpConfigId}`), after decod
 - The Response Issuer (when present) and the Assertion Issuer are the IdP entityID from the IdP metadata.
 - The assertion has Conditions whose NotBefore/NotOnOrAfter include the current time, and every AudienceRestriction includes the Service Provider Issuer ID.
 - It has a bearer SubjectConfirmation whose SubjectConfirmationData has a NotOnOrAfter in the future, a Recipient equal to the assertion consumer URL, and an InResponseTo equal to the Response's.
-- The Response InResponseTo matches an authentication request started from the same browser, or it is absent and `allow.unsolicited.responses` is true.
+- The Response InResponseTo matches an authentication request started from the same browser, or it is absent and `allow.unsolicited.responses` is true. A login started on a host other than the Service Provider Endpoint Hostname (a site alias, or a site using the System Host configuration) is first redirected to `https://<endpoint host>/dotsaml/login/<site id>` and starts from there, so the browser sends the request cookie back with the response.
 - It has an AuthnStatement whose SessionNotOnOrAfter, if present, is in the future.
 - The assertion ID has not been used before on any node. Used IDs are recorded in the `dotsaml_assertion_replay` table, which the bundle creates in the dotCMS database on first use, until the confirmation expires.
 

@@ -1,7 +1,6 @@
 package com.dotcms.saml.utils;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,21 +26,14 @@ public class TestAuthnRequestStateCookie {
     @Before
     public void setUp() {
 
-        AuthnRequestStateCookie.setClock(this.now::get);
         this.browserCookie = null;
-    }
-
-    @After
-    public void tearDown() {
-
-        AuthnRequestStateCookie.setClock(null);
     }
 
     @Test
     public void cookieIsHostPrefixedSecureAndScopedToTheIdpConfiguration() {
 
         final List<String> headers = new ArrayList<>();
-        AuthnRequestStateCookie.remember(request(), response(headers), idp(CONFIG_ID), "_request1");
+        AuthnRequestStateCookie.remember(request(), response(headers), idp(CONFIG_ID), "_request1", this.now::get);
 
         final String header = headers.get(0);
         Assert.assertTrue(header, header.startsWith("__Host-dotsaml_req_" + CONFIG_ID + "="));
@@ -98,7 +90,7 @@ public class TestAuthnRequestStateCookie {
         remember("_request1");
 
         Assert.assertFalse(AuthnRequestStateCookie.consume(request(), response(new ArrayList<>()),
-                idp("8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"), "_request1"));
+                idp("8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"), "_request1", this.now::get));
     }
 
     @Test
@@ -114,12 +106,12 @@ public class TestAuthnRequestStateCookie {
 
     private void remember(final String requestId) {
 
-        AuthnRequestStateCookie.remember(request(), response(new ArrayList<>()), idp(CONFIG_ID), requestId);
+        AuthnRequestStateCookie.remember(request(), response(new ArrayList<>()), idp(CONFIG_ID), requestId, this.now::get);
     }
 
     private boolean consume(final String requestId) {
 
-        return AuthnRequestStateCookie.consume(request(), response(new ArrayList<>()), idp(CONFIG_ID), requestId);
+        return AuthnRequestStateCookie.consume(request(), response(new ArrayList<>()), idp(CONFIG_ID), requestId, this.now::get);
     }
 
     /** The browser: sends back the last cookie the server set. */

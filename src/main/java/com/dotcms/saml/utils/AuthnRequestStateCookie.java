@@ -39,7 +39,7 @@ public final class AuthnRequestStateCookie {
     private static final int MIN_MAX_AGE_SECONDS = 60;
     private static final int MAX_MAX_AGE_SECONDS = 3600;
 
-    private static LongSupplier clock = System::currentTimeMillis;
+    private static final LongSupplier SYSTEM_CLOCK = System::currentTimeMillis;
 
     private AuthnRequestStateCookie() {
         // utility class
@@ -57,6 +57,13 @@ public final class AuthnRequestStateCookie {
                                 final IdentityProviderConfiguration identityProviderConfiguration,
                                 final String requestId) {
 
+        remember(request, response, identityProviderConfiguration, requestId, SYSTEM_CLOCK);
+    }
+
+    static void remember(final HttpServletRequest request, final HttpServletResponse response,
+                         final IdentityProviderConfiguration identityProviderConfiguration,
+                         final String requestId, final LongSupplier clock) {
+
         if (!isSafeToken(requestId) || !isSafeToken(identityProviderConfiguration.getId())) {
 
             throw new SamlException("Can not record the authentication request for IdP '"
@@ -65,8 +72,8 @@ public final class AuthnRequestStateCookie {
 
         final int maxAgeSeconds = getMaxAgeSeconds(identityProviderConfiguration);
         final List<String> entries = new ArrayList<>();
-        entries.add(requestId + TIME_SEPARATOR + nowSeconds());
-        for (final String entry : readEntries(request, identityProviderConfiguration, maxAgeSeconds)) {
+        entries.add(requestId + TIME_SEPARATOR + nowSeconds(clock));
+        for (final String entry : readEntries(request, identityProviderConfiguration, maxAgeSeconds, clock)) {
 
             if (entries.size() < MAX_OUTSTANDING_REQUESTS && !requestId.equals(idOf(entry))) {
                 entries.add(entry);
@@ -90,13 +97,20 @@ public final class AuthnRequestStateCookie {
                                   final IdentityProviderConfiguration identityProviderConfiguration,
                                   final String requestId) {
 
+        return consume(request, response, identityProviderConfiguration, requestId, SYSTEM_CLOCK);
+    }
+
+    static boolean consume(final HttpServletRequest request, final HttpServletResponse response,
+                           final IdentityProviderConfiguration identityProviderConfiguration,
+                           final String requestId, final LongSupplier clock) {
+
         if (!isSafeToken(requestId) || !isSafeToken(identityProviderConfiguration.getId())) {
 
             return false;
         }
 
         final int maxAgeSeconds = getMaxAgeSeconds(identityProviderConfiguration);
-        final List<String> entries = readEntries(request, identityProviderConfiguration, maxAgeSeconds);
+        final List<String> entries = readEntries(request, identityProviderConfiguration, maxAgeSeconds, clock);
         final boolean found = entries.removeIf(entry -> requestId.equals(idOf(entry)));
         if (found) {
 
@@ -127,16 +141,10 @@ public final class AuthnRequestStateCookie {
         return Math.max(MIN_MAX_AGE_SECONDS, Math.min(MAX_MAX_AGE_SECONDS, maxAge));
     }
 
-    /** For tests: the clock used to stamp and expire entries. */
-    static void setClock(final LongSupplier testClock) {
-
-        clock = null != testClock ? testClock : System::currentTimeMillis;
-    }
-
     /** Unexpired, well-formed entries from the cookie, newest first. */
     private static List<String> readEntries(final HttpServletRequest request,
                                             final IdentityProviderConfiguration identityProviderConfiguration,
-                                            final int maxAgeSeconds) {
+                                            final int maxAgeSeconds, final LongSupplier clock) {
 
         final List<String> entries = new ArrayList<>();
         final Cookie[] cookies = request.getCookies();
@@ -145,7 +153,7 @@ public final class AuthnRequestStateCookie {
         }
 
         final String name = cookieName(identityProviderConfiguration);
-        final long oldest = nowSeconds() - maxAgeSeconds;
+        final long oldest = nowSeconds(clock) - maxAgeSeconds;
         for (final Cookie cookie : cookies) {
 
             if (!name.equals(cookie.getName()) || StringUtils.isBlank(cookie.getValue())) {
@@ -189,7 +197,7 @@ public final class AuthnRequestStateCookie {
         }
     }
 
-    private static long nowSeconds() {
+    private static long nowSeconds(final LongSupplier clock) {
 
         return clock.getAsLong() / 1000L;
     }

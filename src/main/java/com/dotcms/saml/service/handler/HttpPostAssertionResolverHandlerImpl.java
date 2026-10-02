@@ -98,6 +98,13 @@ public class HttpPostAssertionResolverHandlerImpl implements AssertionResolverHa
 			decoder.decode();
 
 			messageContext = decoder.getMessageContext();
+			if (!(messageContext.getMessage() instanceof Response)) {
+
+				this.messageObserver.updateError(this.getClass().getName(), "The SAML message posted for IdP '"
+						+ identityProviderConfiguration.getIdpName() + "' is not a Response");
+				throw new SamlException("The SAML message posted to the assertion consumer URL is not a Response");
+			}
+
 			samlResponse = (Response) messageContext.getMessage();
 
 			this.messageObserver.updateDebug(this.getClass().getName(),"Post message context decoded:");

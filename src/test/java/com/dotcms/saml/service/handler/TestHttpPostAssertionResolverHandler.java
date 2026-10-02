@@ -31,6 +31,7 @@ import org.opensaml.saml.saml2.core.AuthnStatement;
 import org.opensaml.saml.saml2.core.Conditions;
 import org.opensaml.saml.saml2.core.EncryptedAssertion;
 import org.opensaml.saml.saml2.core.Issuer;
+import org.opensaml.saml.saml2.core.LogoutResponse;
 import org.opensaml.saml.saml2.core.NameID;
 import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.saml.saml2.core.Status;
@@ -180,6 +181,21 @@ public class TestHttpPostAssertionResolverHandler {
 
         assertRejected("AudienceRestriction does not include this service provider",
                 () -> handler().resolveAssertion(post(samlResponse, requestId), response(), idp(SamlConstants.ASSERTION)));
+    }
+
+    @Test
+    public void samlMessageThatIsNotAResponseIsRejected() throws Exception {
+
+        final LogoutResponse logoutResponse = build(LogoutResponse.DEFAULT_ELEMENT_NAME);
+        logoutResponse.setID(newId());
+        logoutResponse.setIssueInstant(new DateTime());
+        logoutResponse.setIssuer(issuer());
+        XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(logoutResponse).marshall(logoutResponse);
+        final String posted = Base64.getEncoder().encodeToString(
+                SerializeSupport.nodeToString(logoutResponse.getDOM()).getBytes(StandardCharsets.UTF_8));
+
+        assertRejected("is not a Response", () -> handler().resolveAssertion(post(posted, newId()), response(),
+                idp(SamlConstants.ASSERTION)));
     }
 
     @Test
