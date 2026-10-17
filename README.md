@@ -353,7 +353,7 @@ Once your changes are tested and working, create the release version:
 4. **Deploy the release JAR** to the dotCMS artifact repository:
    ```bash
    mvn deploy:deploy-file \
-     -DgroupId=com.dotcms \
+     -DgroupId=com.dotcms.samlbundle \
      -DartifactId=com.dotcms.samlbundle \
      -Dversion=26.10.17 \
      -Dpackaging=jar \
