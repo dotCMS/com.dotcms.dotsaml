@@ -279,7 +279,7 @@ The SAML plugin is a **system plugin** in dotCMS — it is already included in t
 
 3. **Set a SNAPSHOT version** in the `pom.xml` file:
    ```xml
-   <version>26.08.21-SNAPSHOT</version>
+   <version>26.10.17-SNAPSHOT</version>
    ```
    Using a SNAPSHOT version is the standard practice when working across multiple artifacts (plugin + dotCMS app) simultaneously. It signals that this is a development version under active testing.
 
@@ -307,7 +307,7 @@ Then, in the dotCMS core repository, update the SAML plugin dependency in `osgi-
 <dependency>
     <groupId>com.dotcms</groupId>
     <artifactId>com.dotcms.samlbundle</artifactId>
-    <version>26.08.21-SNAPSHOT</version>
+    <version>26.10.17-SNAPSHOT</version>
     <scope>provided</scope>
 </dependency>
 ```
@@ -327,7 +327,7 @@ Once your changes are tested and working, create the release version:
 
 1. **Update the version** in `pom.xml` to remove the `-SNAPSHOT` suffix:
    ```xml
-   <version>26.08.21</version>
+   <version>26.10.17</version>
    ```
 
 2. **Rebuild the plugin JAR**
@@ -335,38 +335,22 @@ Once your changes are tested and working, create the release version:
    ./mvnw clean package -DskipTests
    ```
 
-3. **Configure your Maven credentials** (if not already done)
+3. **Get the repository credentials.** `repo.dotcms.com` is no longer Artifactory. It is a BunnyCDN storage zone, accessed over its S3-compatible API. You need the storage-zone name and password (the same values CI uses as `MAVEN_BUNNY_RW_USERNAME` / `MAVEN_BUNNY_RW_PASSWORD`).
 
-   Add an entry for `dotcms-libs` in your `~/.m2/settings.xml` file. It is recommended to use a token instead of your actual password (you can generate a token from the user profile in the repository site):
-   ```xml
-   <settings>
-     <servers>
-       <server>
-         <id>dotcms-libs</id>
-         <username>{{username}}</username>
-         <password>{{user-token}}</password>
-       </server>
-     </servers>
-   </settings>
-   ```
-
-4. **Deploy the release JAR** to the dotCMS artifact repository:
+4. **Publish the JAR and POM** with core's helper script (`.github/scripts/publish-to-s3/publish.sh` in [dotCMS/core](https://github.com/dotCMS/core)). It also uploads `.sha1`/`.md5` checksums. Run it from a core checkout, with `PLUGIN` pointing at this repository:
    ```bash
-   mvn deploy:deploy-file \
-     -DgroupId=com.dotcms \
-     -DartifactId=com.dotcms.samlbundle \
-     -Dversion=26.08.21 \
-     -Dpackaging=jar \
-     -Dfile=target/com.dotcms.samlbundle-26.08.21.jar \
-     -DrepositoryId=dotcms-libs \
-     -Durl=https://repo.dotcms.com/artifactory/libs-release
+   export MAVEN_BUNNY_RW_USERNAME=<storage-zone-name> MAVEN_BUNNY_RW_PASSWORD=<storage-zone-password>
+   V=26.10.17; K=com/dotcms/samlbundle/com.dotcms.samlbundle/$V
+   .github/scripts/publish-to-s3/publish.sh file --source "$PLUGIN/target/com.dotcms.samlbundle-$V.jar" --key "$K/com.dotcms.samlbundle-$V.jar"
+   .github/scripts/publish-to-s3/publish.sh file --source "$PLUGIN/pom.xml" --key "$K/com.dotcms.samlbundle-$V.pom"
    ```
+   The groupId is `com.dotcms.samlbundle` (the path `com/dotcms/samlbundle/…`), which is what core resolves. Check `https://repo.dotcms.com/libs-release/$K/com.dotcms.samlbundle-$V.jar` before opening the core PR.
 
 #### Step 4: Update the Plugin Version in dotCMS Core and Create a Pull Request
 
 1. **Update the version** in the dotCMS core repository's `osgi-base/system-bundles/pom.xml` to point to the release version:
    ```xml
-   <version>26.08.21</version>
+   <version>26.10.17</version>
    ```
 
 2. **Commit your change** to a feature branch in the core repository
@@ -480,6 +464,7 @@ While we’ve documented improvement points and ideas to make the implementation
 
 
 #### Change Log:
+- 26.10.17: stricter SAML response validation (Destination, Issuer, Conditions, AudienceRestriction, SubjectConfirmation, InResponseTo, replay)
 - 26.08.21: upgraded Bouncy Castle 1.54 -> 1.85 (CVE-2026-59638), bumped dotcms-core to 26.03.27-01
 - 26.03.17: migrated from Gradle to Maven, Java 21, removed fragment JAR generation
 - 25.04.28: added the ability to remove the RequestedAuthnContext from the auth
